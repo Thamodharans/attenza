@@ -1065,5 +1065,42 @@
             installStrip.classList.add('hidden');
         }
     </script>
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(() => console.log('Service Worker registered'))
+    .catch(err => console.log('SW registration failed:', err));
+}
+
+// Handle Install Prompt (for your install strip)
+let deferredPrompt;
+const installStrip = document.getElementById('installStrip');
+const installText = document.querySelector('.install-text');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent the default mini-infobar from appearing
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show your install strip if hidden
+  if (installStrip) installStrip.classList.remove('hidden');
+});
+
+// When user clicks the install strip -> show browser install prompt
+installStrip?.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const choice = await deferredPrompt.userChoice;
+  if (choice.outcome === 'accepted') {
+    console.log('User accepted install');
+    if (installText) installText.textContent = 'Installed — enjoy ATTENZA';
+  } else {
+    console.log('User dismissed install');
+  }
+  deferredPrompt = null;
+  if (installStrip) installStrip.classList.add('hidden');
+});
+</script>
+
 </body>
 </html>
