@@ -22,7 +22,7 @@
 
         .header {
             background: #ffffff;
-            padding: 23px 16px;
+            padding: 23px 16px; /* top/bottom, left/right – you can change later */
             border-bottom: 1px solid #e0e0e0;
             border-bottom-left-radius: 20px;
             border-bottom-right-radius: 20px;
@@ -44,57 +44,51 @@
         .left-section {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 6px; /* distance between menu and ATTENZA text */
         }
 
-        .menu-btn, .search-btn {
-            width: 43px;
-            height: 43px;
-            background: transparent;
-            border: 1.5px solid #e0e0e0;
-            border-radius: 12px;
+        /* 🔳 MENU + SEARCH BUTTON BASE STYLE */
+        .menu-btn,
+        .search-btn {
+            width: 40px;          /* button size – change later if you want */
+            height: 40px;
+            background: #000000;  /* black box */
+            border-radius: 10px;  /* rounded corners */
+            border: none;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
 
-        .menu-btn:hover, .search-btn:hover {
-            background: #f5f5f5;
-            border-color: #d0d0d0;
+        .menu-btn:hover,
+        .search-btn:hover {
+            background: #111111;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+            transform: translateY(-1px);
         }
 
-        .menu-btn span {
-            height: 2px;
-            background: #2d3436;
+        /* 🍔 MENU ICON: 3 WHITE LINES */
+        .menu-lines {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 16px; /* total height of the stack of lines */
+        }
+
+        .menu-lines span {
+            width: 20px;       /* line length */
+            height: 2px;       /* line thickness */
+            background: #ffffff;
             border-radius: 2px;
-            transition: all 0.3s ease;
         }
 
-        .menu-btn span:nth-child(1) {
-            width: 12px;
-            margin-bottom: 5px;
-            align-self: flex-start;
-            margin-left: 8px;
-        }
-
-        .menu-btn span:nth-child(2) {
-            width: 16px;
-            margin-bottom: 5px;
-            align-self: flex-start;
-            margin-left: 8px;
-        }
-
-        .menu-btn span:nth-child(3) {
-            width: 20px;
-        }
-
+        /* 🔍 SEARCH ICON (WHITE MAGNIFIER INSIDE BLACK BOX) */
         .search-btn svg {
             width: 20px;
             height: 20px;
-            stroke: #2d3436;
+            stroke: #ffffff;    /* white lines */
             stroke-width: 2;
             fill: none;
         }
@@ -645,11 +639,11 @@
             .brand-name {
                 font-size: 16px;
             }
-            
+
             .tagline {
                 font-size: 11px;
             }
-            
+
             .features {
                 grid-template-columns: 1fr;
             }
@@ -681,16 +675,22 @@
     <div class="header" id="header">
         <div class="top-bar">
             <div class="left-section">
+                <!-- 🍔 NEW MENU BUTTON -->
                 <button class="menu-btn">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                    <div class="menu-lines">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
                 </button>
+
                 <div class="brand-container">
                     <span class="brand-name">ATTENZA</span>
                     <span class="tagline">a student driven attendance tracker</span>
                 </div>
             </div>
+
+            <!-- 🔍 NEW SEARCH BUTTON -->
             <button class="search-btn">
                 <svg viewBox="0 0 24 24">
                     <circle cx="11" cy="11" r="8"></circle>
@@ -698,7 +698,7 @@
                 </svg>
             </button>
         </div>
-        
+
         <div class="expand-section">
             <div class="expand-arrow" id="expandArrow">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -970,7 +970,7 @@
             const radius = 70;
             const circumference = 2 * Math.PI * radius;
             const offset = circumference - (percentage / 100) * circumference;
-            
+
             circle.style.strokeDasharray = `${circumference} ${circumference}`;
             circle.style.strokeDashoffset = offset;
         }
@@ -1026,7 +1026,7 @@
                 const card = this.closest('.class-card');
                 const subject = card.querySelector('.class-subject').textContent;
                 const action = this.textContent;
-                
+
                 // Visual feedback
                 this.style.transform = 'scale(0.95)';
                 setTimeout(() => {
@@ -1042,7 +1042,7 @@
         updateQuote(75);
         carousel.style.cursor = 'grab';
 
-        // PWA Install functionality - FIXED VERSION
+        // PWA Install functionality
         let deferredPrompt;
         const installStrip = document.getElementById('installStrip');
         const installText = document.getElementById('installText');
@@ -1069,12 +1069,12 @@
                 alert('App install is not available. Try using Chrome or Edge browser.');
                 return;
             }
-            
+
             try {
                 deferredPrompt.prompt();
                 const choiceResult = await deferredPrompt.userChoice;
                 console.log('User choice:', choiceResult.outcome);
-                
+
                 if (choiceResult.outcome === 'accepted') {
                     console.log('User accepted the install prompt');
                     installText.textContent = 'Installing...';
@@ -1084,14 +1084,14 @@
                 } else {
                     console.log('User dismissed the install prompt');
                 }
-                
+
                 deferredPrompt = null;
             } catch (err) {
                 console.error('Error during install prompt:', err);
             }
         });
 
-        // Handle close button click - stop propagation to prevent triggering install
+        // Handle close button click
         closeStripBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             installStrip.classList.add('hidden');
