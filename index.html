@@ -18,6 +18,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: #f5f3ef;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         .header {
@@ -252,8 +253,8 @@
 
         /* HERO / WELCOME AREA – blended with background */
         .welcome-section {
-            margin: 6px -16px 28px;  /* negative right so image can touch edge */
-            padding: 0 16px 4px;
+            margin: 6px 0 28px;  /* negative right so image can touch edge */
+            padding: 0;
         }
 
         .welcome-content {
@@ -261,6 +262,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 16px;
+            padding: 0 16px;
         }
 
         .welcome-left {
@@ -333,6 +335,7 @@
 
         .welcome-illustration {
             flex-shrink: 0;
+            margin-right: -16px;
         }
 
         .welcome-illustration img {
