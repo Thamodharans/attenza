@@ -22,7 +22,7 @@
 
         .header {
             background: #ffffff;
-            padding: 23px 16px 6px; /* top/bottom, left/right – you can change later */
+            padding: 23px 16px 6px;
             border-bottom: 1px solid #e0e0e0;
             border-bottom-left-radius: 20px;
             border-bottom-right-radius: 20px;
@@ -44,10 +44,10 @@
         .left-section {
             display: flex;
             align-items: center;
-            gap: 16px; /* distance between menu and ATTENZA text */
+            gap: 16px;
         }
 
-        /* MENU + SEARCH BUTTON BASE STYLE */
+        /* MENU + SEARCH BUTTONS */
         .menu-btn,
         .search-btn {
             width: 44px;
@@ -69,7 +69,7 @@
             transform: translateY(-1px);
         }
 
-        /* MENU ICON: 3 WHITE LINES */
+        /* MENU ICON */
         .menu-lines {
             display: flex;
             flex-direction: column;
@@ -216,7 +216,6 @@
         }
 
         /* QUICK ACTION BUTTONS */
-
         .quick-actions {
             display: flex;
             gap: 14px;
@@ -251,10 +250,7 @@
             }
         }
 
-        /* NEW WELCOME SECTION LAYOUT
-           text + ring on left, illustration on right, NO card container
-        */
-
+        /* WELCOME SECTION – text + ring LEFT, illustration RIGHT */
         .welcome-section {
             padding: 10px 0;
             margin-bottom: 35px;
@@ -341,7 +337,7 @@
         .welcome-illustration {
             flex-shrink: 0;
             display: flex;
-            justify-content: center;
+            justify-content: flex-end;
             align-items: center;
         }
 
@@ -351,7 +347,7 @@
             display: block;
         }
 
-        /* TEXT FADE ANIMATION */
+        /* Fade animation for text */
         .fade-text {
             opacity: 0;
             transition: opacity 0.35s ease;
@@ -670,6 +666,7 @@
             color: white;
         }
 
+        /* MOBILE ADJUSTMENTS */
         @media (max-width: 768px) {
             .brand-name {
                 font-size: 16px;
@@ -683,13 +680,19 @@
                 grid-template-columns: 1fr;
             }
 
+            /* keep side-by-side on mobile */
             .welcome-content {
-                flex-direction: column-reverse;
-                text-align: center;
+                flex-direction: row;
+                text-align: left;
             }
 
             .welcome-left {
-                align-items: center;
+                align-items: flex-start;
+            }
+
+            /* make illustration touch right screen edge */
+            .welcome-section {
+                margin-right: -16px; /* cancels content-body right padding */
             }
 
             .attendance-ring {
@@ -715,7 +718,6 @@
     <div class="header" id="header">
         <div class="top-bar">
             <div class="left-section">
-                <!-- MENU BUTTON -->
                 <button class="menu-btn">
                     <div class="menu-lines">
                         <span></span>
@@ -730,7 +732,6 @@
                 </div>
             </div>
 
-            <!-- SEARCH BUTTON -->
             <button class="search-btn">
                 <svg viewBox="0 0 24 24">
                     <circle cx="10" cy="10" r="7"></circle>
@@ -803,7 +804,7 @@
             </button>
         </div>
 
-        <!-- NEW WELCOME SECTION: text + ring LEFT, illustration RIGHT -->
+        <!-- WELCOME SECTION: text + ring left, illustration right -->
         <div class="welcome-section">
             <div class="welcome-content">
                 <div class="welcome-left">
@@ -825,8 +826,8 @@
                 </div>
 
                 <div class="welcome-illustration">
-                    <!-- change the path if you save it somewhere else -->
-                    <img src="Image/Illustration.png" alt="Student illustration">
+                    <!-- change src if your file path is different -->
+                    <img src="Image/llustration.png" alt="Student illustration">
                 </div>
             </div>
         </div>
@@ -1059,6 +1060,7 @@
             setTimeout(() => {
                 titleEl.textContent = title;
                 subtitleEl.textContent = subtitle;
+
                 titleEl.classList.remove('fade-text');
                 subtitleEl.classList.remove('fade-text');
             }, 350);
@@ -1102,7 +1104,6 @@
                 const subject = card.querySelector('.class-subject').textContent;
                 const action = this.textContent;
 
-                // Visual feedback
                 this.style.transform = 'scale(0.95)';
                 setTimeout(() => {
                     this.style.transform = '';
@@ -1123,12 +1124,10 @@
         const installText = document.getElementById('installText');
         const closeStripBtn = document.getElementById('closeStrip');
 
-        // Check if user previously dismissed the strip
         if (localStorage.getItem('installStripDismissed') === 'true') {
             installStrip.classList.add('hidden');
         }
 
-        // Listen for the beforeinstallprompt event
         window.addEventListener('beforeinstallprompt', (e) => {
             console.log('beforeinstallprompt event fired');
             e.preventDefault();
@@ -1136,7 +1135,6 @@
             installStrip.classList.remove('hidden');
         });
 
-        // Handle install button click
         installText.addEventListener('click', async function() {
             console.log('Install text clicked');
             if (!deferredPrompt) {
@@ -1166,7 +1164,6 @@
             }
         });
 
-        // Handle close button click
         closeStripBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             installStrip.classList.add('hidden');
@@ -1174,7 +1171,6 @@
             console.log('Install strip dismissed');
         });
 
-        // Register Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
@@ -1187,7 +1183,6 @@
             });
         }
 
-        // Listen for successful app install
         window.addEventListener('appinstalled', () => {
             console.log('PWA was installed successfully');
             installStrip.classList.add('hidden');
