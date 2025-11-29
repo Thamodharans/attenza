@@ -57,96 +57,74 @@
             gap: 16px;
         }
 
-        /* HEADER ICON BUTTONS (menu + notification) */
-        .menu-btn,
-        .notif-btn {
+        /* HEADER ICON BUTTONS (menu + notification) - BORDER ONLY STYLE */
+        .icon-btn {
             width: 44px;
             height: 44px;
-            background: #3a3a3a;
-            border-radius: 17px;
-            border: none;
+            background: transparent;
+            border: 3px solid #333333;
+            border-radius: 16px;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            padding: 0;
+            position: relative;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
         }
 
-        .menu-btn:hover,
-        .notif-btn:hover {
-            background: #1a1a1a;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
-            transform: translateY(-1px);
+        .icon-btn:hover {
+            background-color: #f5f5f5;
+            border-color: #b8b8b8;
         }
 
-        /* MENU ICON (adapted from your card version) */
-        .menu-icon {
-            width: 24px;
-            height: 18px;
+        /* MENU ICON (3-level variant) */
+        .menu-mini {
+            width: 20px;
+            height: 16px;
             position: relative;
         }
 
-        .menu-icon span,
-        .menu-icon::before,
-        .menu-icon::after {
+        .menu-mini::before,
+        .menu-mini::after,
+        .menu-mini span {
             content: "";
             position: absolute;
             left: 0;
-            right: 0;
             height: 3px;
-            border-radius: 2px;
-            background: #d0d0d0;  /* same light-grey as your bell outline */
-            margin: auto;
+            background: #333333;
+            border-radius: 4px;
         }
 
-        .menu-icon span {
+        .menu-mini::before {
+            top: 0;
+            width: 20px;
+        }
+
+        .menu-mini span {
             top: 50%;
             transform: translateY(-50%);
+            width: 14px;
         }
 
-        .menu-icon::before {
-            top: 0;
-        }
-
-        .menu-icon::after {
+        .menu-mini::after {
             bottom: 0;
+            width: 9px;
         }
 
-        /* NOTIFICATION ICON (renamed classes to avoid .loader conflict) */
-        .notif-loader {
-            width: fit-content;
-            height: fit-content;
-            background-color: rgb(58, 58, 58);
-            border-radius: 7px;
-            padding: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            cursor: pointer;
-            transition: 0.2s;
+        /* NOTIFICATION ICON (border-only bell + green dot) */
+        .notif-rev svg {
+            width: 22px;
+            height: 22px;
+            color: #000000;
         }
 
-        .notif-loader:hover {
-            background-color: rgb(26, 26, 26);
-        }
-
-        .notif-loader:hover svg {
-            color: white;
-        }
-
-        .notif-loader svg {
-            color: rgba(255, 255, 255, 0.651);
-            transform: scale(1.0);
-            transition: 0.2s;
-        }
-
-        .notif-point {
+        .notif-dot {
             position: absolute;
-            bottom: 4px;
-            left: 4px;
-            width: 6px;
-            height: 6px;
+            top: 6px;
+            right: 6px;
+            width: 10px;
+            height: 10px;
             background-color: rgb(0, 255, 0);
             border-radius: 25px;
             display: flex;
@@ -154,26 +132,26 @@
             justify-content: center;
         }
 
-        .notif-point::before {
+        .notif-dot::before {
             content: "";
             position: absolute;
-            width: 1px;
-            height: 1px;
+            width: 2px;
+            height: 2px;
             background-color: rgb(0, 255, 0);
-            border-radius: 25px;
-            animation: notif-loop 1s 0s infinite;
+            border-radius: 35px;
+            animation: notifPulse 1s infinite;
         }
 
-        @keyframes notif-loop {
+        @keyframes notifPulse {
             0% {
                 background-color: rgb(0, 255, 0);
-                width: 1px;
-                height: 1px;
+                width: 2px;
+                height: 2px;
             }
             100% {
                 background-color: rgba(0, 255, 0, 0);
-                width: 30px;
-                height: 30px;
+                width: 26px;
+                height: 26px;
             }
         }
 
@@ -1360,9 +1338,9 @@
 <div class="header" id="header">
     <div class="top-bar">
         <div class="left-section">
-            <!-- NEW MENU BUTTON ICON -->
-            <button class="menu-btn">
-                <div class="menu-icon"><span></span></div>
+            <!-- NEW MENU BUTTON (border-only) -->
+            <button class="icon-btn" aria-label="Menu">
+                <div class="menu-mini"><span></span></div>
             </button>
 
             <div class="brand-container">
@@ -1371,27 +1349,23 @@
             </div>
         </div>
 
-        <!-- NOTIFICATION BUTTON INSTEAD OF SEARCH -->
-        <button class="notif-btn" aria-label="Notifications">
-            <div class="notif-loader">
-                <svg
+        <!-- NEW NOTIFICATION BUTTON (border-only) -->
+        <button class="icon-btn notif-rev" aria-label="Notifications">
+            <svg
                     viewBox="0 0 24 24"
                     fill="none"
-                    height="22"
-                    width="22"
                     xmlns="http://www.w3.org/2000/svg"
                     aria-hidden="true"
-                >
-                    <path
+            >
+                <path
                         d="M12 5.365V3m0 2.365a5.338 5.338 0 0 1 5.133 5.368v1.8c0 2.386 1.867 2.982 1.867 4.175 0 .593 0 1.292-.538 1.292H5.538C5 18 5 17.301 5 16.708c0-1.193 1.867-1.789 1.867-4.175v-1.8A5.338 5.338 0 0 1 12 5.365ZM8.733 18c.094.852.306 1.54.944 2.112a3.48 3.48 0 0 0 4.646 0c.638-.572 1.236-1.26 1.33-2.112h-6.92Z"
-                        stroke-width="2"
+                        stroke-width="1.5"
                         stroke-linejoin="round"
                         stroke-linecap="round"
                         stroke="currentColor"
-                    ></path>
-                </svg>
-                <div class="notif-point"></div>
-            </div>
+                ></path>
+            </svg>
+            <div class="notif-dot"></div>
         </button>
     </div>
 
