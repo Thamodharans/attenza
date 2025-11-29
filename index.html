@@ -7,8 +7,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Font for AI section -->
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Notebook page fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cedarville+Cursive&display=swap" rel="stylesheet">
 
     <title>ATTENZA - for Dispur College</title>
     <style>
@@ -54,12 +57,12 @@
             gap: 16px;
         }
 
-        /* MENU + SEARCH BUTTONS */
+        /* HEADER ICON BUTTONS (menu + notification) */
         .menu-btn,
-        .search-btn {
+        .notif-btn {
             width: 44px;
             height: 44px;
-            background: #2d3561;
+            background: #3a3a3a;
             border-radius: 17px;
             border: none;
             display: flex;
@@ -70,34 +73,108 @@
         }
 
         .menu-btn:hover,
-        .search-btn:hover {
-            background: #3a4278;
+        .notif-btn:hover {
+            background: #1a1a1a;
             box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
             transform: translateY(-1px);
         }
 
-        /* MENU ICON */
-        .menu-lines {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 16px;
+        /* MENU ICON (adapted from your card version) */
+        .menu-icon {
+            width: 24px;
+            height: 18px;
+            position: relative;
         }
 
-        .menu-lines span {
-            width: 22px;
-            height: 2px;
-            background: #ffffff;
+        .menu-icon span,
+        .menu-icon::before,
+        .menu-icon::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 3px;
             border-radius: 2px;
+            background: #d0d0d0;  /* same light-grey as your bell outline */
+            margin: auto;
         }
 
-        /* SEARCH ICON */
-        .search-btn svg {
-            width: 25px;
-            height: 25px;
-            stroke: #ffffff;
-            stroke-width: 2;
-            fill: none;
+        .menu-icon span {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .menu-icon::before {
+            top: 0;
+        }
+
+        .menu-icon::after {
+            bottom: 0;
+        }
+
+        /* NOTIFICATION ICON (renamed classes to avoid .loader conflict) */
+        .notif-loader {
+            width: fit-content;
+            height: fit-content;
+            background-color: rgb(58, 58, 58);
+            border-radius: 7px;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .notif-loader:hover {
+            background-color: rgb(26, 26, 26);
+        }
+
+        .notif-loader:hover svg {
+            color: white;
+        }
+
+        .notif-loader svg {
+            color: rgba(255, 255, 255, 0.651);
+            transform: scale(1.0);
+            transition: 0.2s;
+        }
+
+        .notif-point {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            width: 6px;
+            height: 6px;
+            background-color: rgb(0, 255, 0);
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notif-point::before {
+            content: "";
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            background-color: rgb(0, 255, 0);
+            border-radius: 25px;
+            animation: notif-loop 1s 0s infinite;
+        }
+
+        @keyframes notif-loop {
+            0% {
+                background-color: rgb(0, 255, 0);
+                width: 1px;
+                height: 1px;
+            }
+            100% {
+                background-color: rgba(0, 255, 0, 0);
+                width: 30px;
+                height: 30px;
+            }
         }
 
         .brand-container {
@@ -222,41 +299,6 @@
             padding: 16px 16px;
         }
 
-        /* QUICK ACTION BUTTONS */
-        .quick-actions {
-            display: flex;
-            gap: 14px;
-            justify-content: space-between;
-            flex-wrap: nowrap;
-            margin-bottom: 10px; /* distance to hero */
-        }
-
-        .action-btn {
-            padding: 13px 24px;
-            flex: 1 1 0;
-            text-align: center;
-            border-radius: 14px;
-            border: 1.5px solid #3a4278;
-            background: white;
-            font-size: 15px;
-            font-weight: 500;
-            color: #2d3436;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .action-btn:hover {
-            background: #fafafa;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        @media (max-width: 480px) {
-            .action-btn {
-                padding: 13px 16px;
-            }
-        }
-
         /* 🎨 HERO / WELCOME AREA – illustration as background on right */
         .welcome-section {
             margin: 4px -16px 28px;  /* remove side padding so bg can touch edge */
@@ -343,7 +385,7 @@
             font-weight: 500;
         }
 
-        /* Fade animation for text when buttons clicked */
+        /* Fade animation for text when buttons clicked (still used by changeWelcomeText) */
         .fade-text {
             opacity: 0;
             transition: opacity 0.35s ease;
@@ -660,6 +702,96 @@
 
         .close-strip svg {
             color: white;
+        }
+
+        /* NOTEBOOK PAGE SECTION (full-width card with 20px side space) */
+        .notebook-section {
+            margin: 0 -16px 32px;   /* take over full width from content-body */
+            padding: 0 20px;        /* 20px space from screen edges */
+        }
+
+        .page {
+            position: relative;
+            box-sizing: border-box;
+            width: 100%;
+            font-family: "Gaegu", cursive;
+            font-size: 16px;
+            background: #fffdf6;
+            background-image: linear-gradient(#f5f5f0 var(--line-light, 0.85rem), #ccc var(--line-dark, 0.95rem));
+            background-size: 100% var(--line-gap, 0.95rem);
+
+            padding: 0.7rem 0.7rem 0.8rem 5.5rem;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 0;
+            overflow: hidden;
+            line-height: 1.05rem;
+        }
+
+        .page::before,
+        .page::after {
+            position: absolute;
+            content: "";
+            bottom: 4px;
+            width: 45%;
+            height: 7px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
+            z-index: -1;
+            transition: 0.3s ease;
+        }
+
+        .page::before {
+            left: 18px;
+            transform: skew(-3deg) rotate(-2deg);
+        }
+
+        .page::after  {
+            right: 18px;
+            transform: skew(3deg) rotate(2deg);
+        }
+
+        .margin {
+            position: absolute;
+            border-left: 1px solid #d88;
+            height: 100%;
+            left: 4.3rem;
+            top: 0;
+        }
+
+        .page p {
+            margin: 0;
+            text-indent: 0.4rem;
+            padding-bottom: 0.4rem;
+            color: #111;
+            line-height: 1.05rem;
+        }
+
+        .note-logo {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 75px;
+            height: 75px;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .teacher-mark {
+            position: absolute;
+            bottom: 0.4rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            transform: rotate(-12deg);
+        }
+
+        .teacher-sign {
+            font-family: "Cedarville Cursive", cursive;
+            font-size: 20px;
+            color: #b71c1c;
+            letter-spacing: 1px;
+            transform: rotate(4deg);
         }
 
         /* MOBILE ADJUSTMENTS */
@@ -1228,12 +1360,9 @@
 <div class="header" id="header">
     <div class="top-bar">
         <div class="left-section">
+            <!-- NEW MENU BUTTON ICON -->
             <button class="menu-btn">
-                <div class="menu-lines">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
+                <div class="menu-icon"><span></span></div>
             </button>
 
             <div class="brand-container">
@@ -1242,11 +1371,27 @@
             </div>
         </div>
 
-        <button class="search-btn">
-            <svg viewBox="0 0 24 24">
-                <circle cx="10" cy="10" r="7"></circle>
-                <path d="M15 15 L21 21"></path>
-            </svg>
+        <!-- NOTIFICATION BUTTON INSTEAD OF SEARCH -->
+        <button class="notif-btn" aria-label="Notifications">
+            <div class="notif-loader">
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    height="22"
+                    width="22"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M12 5.365V3m0 2.365a5.338 5.338 0 0 1 5.133 5.368v1.8c0 2.386 1.867 2.982 1.867 4.175 0 .593 0 1.292-.538 1.292H5.538C5 18 5 17.301 5 16.708c0-1.193 1.867-1.789 1.867-4.175v-1.8A5.338 5.338 0 0 1 12 5.365ZM8.733 18c.094.852.306 1.54.944 2.112a3.48 3.48 0 0 0 4.646 0c.638-.572 1.236-1.26 1.33-2.112h-6.92Z"
+                        stroke-width="2"
+                        stroke-linejoin="round"
+                        stroke-linecap="round"
+                        stroke="currentColor"
+                    ></path>
+                </svg>
+                <div class="notif-point"></div>
+            </div>
         </button>
     </div>
 
@@ -1299,20 +1444,7 @@
 </div>
 
 <div class="content-body">
-    <div class="quick-actions">
-        <button class="action-btn"
-                onclick="changeWelcomeText('Attendance Overview', 'Track your daily and overall attendance here.')">
-            Attendance
-        </button>
-        <button class="action-btn"
-                onclick="changeWelcomeText('Upcoming Events', 'Stay updated with your upcoming classes and campus events.')">
-            Events
-        </button>
-        <button class="action-btn"
-                onclick="changeWelcomeText('Books & Materials', 'Access books, notes and all your study resources here.')">
-            Books
-        </button>
-    </div>
+    <!-- DIRECTLY WELCOME SECTION BELOW HEADER (quick actions removed) -->
 
     <!-- HERO / WELCOME – illustration as background on right -->
     <div class="welcome-section">
@@ -1331,6 +1463,24 @@
                         <span class="percentage-label">Overall</span>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTEBOOK STYLE PAGE CARD (full width with 20px side space) -->
+    <div class="notebook-section">
+        <div class="page">
+            <img src="your-logo.png" alt="Logo" class="note-logo">
+            <div class="margin"></div>
+
+            <p>
+                Keep a quick note of important classes, make-up days or attendance targets here.
+                This space can work like your personal college notebook page.
+            </p>
+
+            <!-- Teacher / principal mark bottom right -->
+            <div class="teacher-mark">
+                <span class="teacher-sign">Principal</span>
             </div>
         </div>
     </div>
@@ -1648,7 +1798,7 @@ Once you connect Gemini and your attendance backend, this will show real, detail
         }
     }
 
-    // Smooth text change for action buttons
+    // Smooth text change (still available if you decide to call it)
     function changeWelcomeText(title, subtitle) {
         const titleEl = document.getElementById('welcomeTitle');
         const subtitleEl = document.getElementById('welcomeSubtitle');
