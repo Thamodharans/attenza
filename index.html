@@ -14,6 +14,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cedarville+Cursive&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cabin+Sketch:wght@400;700&display=swap" rel="stylesheet">
 
+    <!-- Flatpickr CSS for Periodical records -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
     <title>ATTENZA - for Dispur College</title>
 
     <style>
@@ -537,6 +540,7 @@
             background: #d5d5d5;
         }
 
+        /* ORIGINAL SUBJECT SECTION STYLES (no longer used in HTML but kept untouched) */
         .subject-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -1344,6 +1348,559 @@
             80% { filter: hue-rotate(-45deg); }
             100% { filter: hue-rotate(0deg); }
         }
+
+        /* ---------------- PERIODICAL RECORDS SECTION STYLES ---------------- */
+
+        :root {
+            --page-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+
+            --metric-bg: #ffe3ec;
+            --metric-border: #f8cfdc;
+            --metric-accent: #ff4f7d;
+
+            /* summary card sky-blue background */
+            --info-bg: linear-gradient(135deg, #e0f2ff 0%, #bfdbfe 100%);
+            --info-border: rgba(148, 163, 184, 0.5);
+
+            /* keep yellow subject background */
+            --subject-2-bg: linear-gradient(135deg, #fef3c7, #fde68a);
+
+            --card-radius: 18px;
+            --shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.08);
+        }
+
+        .periodical-section {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 40px;
+        }
+
+        .periodical-header {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .periodical-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #2d3436;
+        }
+
+        /* DATE PICKER */
+        .date-picker-container {
+            max-width: 420px;
+            width: 100%;
+        }
+
+        .custom-flatpickr {
+            position: relative;
+        }
+
+        .custom-flatpickr input {
+            width: 100%;
+            padding: 12px 16px;
+            padding-right: 52px;
+            font-size: 15px;
+            color: transparent;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            caret-color: transparent;
+        }
+
+        .custom-flatpickr input:hover {
+            border-color: #9ca3af;
+            box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.6);
+        }
+
+        .custom-flatpickr input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.7);
+        }
+
+        .custom-flatpickr input::placeholder {
+            color: transparent;
+        }
+
+        .date-display {
+            position: absolute;
+            left: 16px;
+            right: 52px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .date-part {
+            color: var(--text-main);
+            white-space: nowrap;
+            position: relative;
+            padding-bottom: 2px;
+        }
+
+        .date-part.empty {
+            color: #9ca3af;
+        }
+
+        .date-part::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #9ca3af;
+            opacity: 0.7;
+        }
+
+        .date-separator {
+            color: #9ca3af;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .calendar-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            font-size: 20px;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .calendar-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .custom-flatpickr input:hover ~ .calendar-icon,
+        .custom-flatpickr input:focus ~ .calendar-icon {
+            color: #4b5563;
+        }
+
+        .date-picker-helper {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: auto;
+            width: fit-content;
+            padding-right: 215px;
+        }
+
+        /* BENTO GRID */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        /* Base card */
+        .card {
+            border-radius: var(--card-radius);
+            padding: 8px 16px 14px;
+            box-shadow: var(--shadow-soft);
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            border: none;
+            position: relative;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card-footer {
+            margin-top: 8px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .span-2 {
+            grid-column: span 2;
+        }
+
+        .span-full {
+            grid-column: 1 / -1;
+        }
+
+        /* Metric cards */
+        .metric-card {
+            background: var(--metric-bg);
+        }
+
+        .metric-icon {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.9;
+        }
+
+        .metric-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        /* Edit pencil for major card */
+        .major-edit-icon {
+            position: absolute;
+            left: 14px;
+            bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0.9;
+        }
+
+        .major-edit-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Circle graph */
+        .circle-shell {
+            width: 95%;
+            max-width: 300px;
+            aspect-ratio: 1 / 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .circle-shell svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .circle-outer-ring {
+            fill: none;
+            stroke: #111827;
+            stroke-width: 8;
+            opacity: 0.15;
+        }
+
+        .circle-inner-value {
+            fill: none;
+            stroke: var(--metric-accent);
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 377;
+            stroke-dashoffset: 94;
+        }
+
+        .circle-center {
+            position: absolute;
+            width: 52%;
+            height: 52%;
+            background: #fff5f8;
+            border-radius: 999px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        .circle-center span {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        /* Half circle */
+        .half-shell {
+            margin-top: 10px;
+            width: 105%;
+            max-width: 360px;
+            aspect-ratio: 2 / 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-bottom: 0;
+        }
+
+        .half-shell svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .half-outer-ring {
+            fill: none;
+            stroke: #111827;
+            stroke-width: 10;
+            stroke-linecap: round;
+            opacity: 0.15;
+        }
+
+        .half-inner-value {
+            fill: none;
+            stroke: var(--metric-accent);
+            stroke-width: 10;
+            stroke-linecap: round;
+            pathLength: 100;
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+        }
+
+        .half-center-text {
+            position: absolute;
+            top: 83%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1;
+        }
+
+        /* Major selection panel */
+        .major-modal {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.98);
+            display: none;
+            z-index: 10;
+            border-radius: inherit;
+            padding: 12px 14px 10px;
+        }
+
+        .major-modal-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .major-modal-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .major-modal-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 10px;
+            overflow-y: auto;
+            padding-right: 2px;
+        }
+
+        .major-modal-list label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .major-modal-list input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+        }
+
+        .major-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .btn-ghost,
+        .btn-primary {
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 12px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-ghost {
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        .btn-primary {
+            background: #111827;
+            color: #ffffff;
+        }
+
+        /* Attendance summary card */
+        .info-card {
+            background: var(--info-bg);
+            align-items: stretch;
+            color: #0f172a;
+        }
+
+        .summary-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .summary-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .summary-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .summary-icon svg {
+            width: 20px;
+            height: 20px;
+            color: #0f172a;
+            opacity: 0.9;
+        }
+
+        .info-card-body {
+            font-size: 13px;
+            color: #0f172a;
+        }
+
+        .info-card-body ul {
+            list-style: disc;
+            padding-left: 18px;
+            margin: 0;
+        }
+
+        .info-card-body li {
+            margin-bottom: 4px;
+        }
+
+        /* Subject cards for periodical section */
+        .card.subject-card {
+            aspect-ratio: 1.2 / 1;
+            padding: 12px 16px 14px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            min-height: 120px;
+        }
+
+        .subject-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            max-height: 48px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .card.subject-card .subject-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            line-height: 1.2;
+            flex: 1;
+            word-break: break-word;
+            white-space: normal;
+            transition: font-size 0.1s ease-out;
+        }
+
+        .card.subject-card .subject-icon {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            flex-shrink: 0;
+            width: auto;
+            height: auto;
+            background: none;
+            margin-bottom: 0;
+        }
+
+        .card.subject-card .subject-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .subject-meta-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin-top: 4px;
+            flex-grow: 1;
+        }
+
+        .subject-meta {
+            font-size: 12px;
+            color: #374151;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .card.subject-card .subject-percentage {
+            position: absolute;
+            right: 16px;
+            bottom: 14px;
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+            z-index: 1;
+        }
+
+        .card.subject-card.purple {
+            background: linear-gradient(135deg, #b39ddb 0%, #9575cd 100%);
+            border: none;
+        }
+
+        .card.subject-card.mint {
+            background: linear-gradient(135deg, #a8ddc4 0%, #7cc9a5 100%);
+            border: none;
+        }
+
+        .card.subject-card.peach {
+            background: linear-gradient(135deg, #ffccbc 0%, #ffab91 100%);
+            border: none;
+        }
+
+        .card.subject-card.subject-2 {
+            background: var(--subject-2-bg);
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -1449,7 +2006,6 @@
                 <path d="M35 60 Q 55 50 80 55" />
                 <path d="M32 68 Q 55 60 85 64" />
                 <path d="M34 76 Q 55 70 82 75" />
-                <!-- fixed missing 'M' here -->
                 <path d="M37 84 Q 58 78 79 82" />
 
                 <path d="M45 45 Q 60 55 78 68" />
@@ -1596,90 +2152,210 @@
         </div>
     </div>
 
-    <div class="section-header">
-        <h3>Subjects</h3>
-        <a href="#" class="view-all">
-            VIEW
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-        </a>
-    </div>
+    <!-- NEW PERIODICAL RECORDS SECTION (replacing old Subjects section) -->
+    <section class="periodical-section">
+        <header class="periodical-header">
+            <h2>Periodical records</h2>
+        </header>
 
-    <div class="subject-grid">
-        <div class="subject-card dark-blue">
-            <div>
-                <div class="subject-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                    </svg>
+        <div class="date-picker-container">
+            <div class="custom-flatpickr">
+                <input
+                    type="text"
+                    placeholder="Select date range..."
+                    data-input
+                    id="rangePicker"
+                />
+                <div class="date-display" id="dateDisplay">
+                    <span class="date-part empty" id="startDate">Select date</span>
+                    <span class="date-separator">to</span>
+                    <span class="date-part empty" id="endDate">Select date</span>
                 </div>
-                <div class="subject-name">Data Structures</div>
+                <span class="calendar-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#323544" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="3" ry="3"></rect>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                    </svg>
+                </span>
             </div>
-            <div class="subject-percentage">82%</div>
-            <div class="arrow-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-            </div>
+            <p class="date-picker-helper">for selected period</p>
         </div>
 
-        <div class="subject-card purple">
-            <div>
-                <div class="subject-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-                    </svg>
-                </div>
-                <div class="subject-name">Database Systems</div>
-            </div>
-            <div class="subject-percentage">78%</div>
-            <div class="arrow-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-            </div>
-        </div>
+        <section class="bento-grid">
 
-        <div class="subject-card mint">
-            <div>
-                <div class="subject-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="16 18 22 12 16 6"></polyline>
-                        <polyline points="8 6 2 12 8 18"></polyline>
+            <article class="card metric-card span-2">
+                <div class="card-title">Overall attendance</div>
+                <div class="metric-icon" aria-hidden="true">
+                    <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#323544" viewBox="0 0 24 24">
+                        <path d="M13.5 2c-.178 0-.356.013-.492.022l-.074.005a1 1 0 0 0-.934.998V11a1 1 0 0 0 1 1h7.975a1 1 0 0 0 .998-.934l.005-.074A7.04 7.04 0 0 0 22 10.5A8.5 8.5 0 0 0 13.5 2Z"/>
+                        <path d="M11 6.025a1 1 0 0 0-1.065-.998 8.5 8.5 0 1 0 9.038 9.039A1 1 0 0 0 17.975 13H11V6.025Z"/>
                     </svg>
                 </div>
-                <div class="subject-name">Web Development</div>
-            </div>
-            <div class="subject-percentage">85%</div>
-            <div class="arrow-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-            </div>
-        </div>
+                <div class="card-body">
+                    <div class="circle-shell">
+                        <svg viewBox="0 0 140 140">
+                            <circle class="circle-outer-ring" cx="70" cy="70" r="60" />
+                            <circle class="circle-inner-value" cx="70" cy="70" r="48" />
+                        </svg>
+                        <div class="circle-center"><span>75%</span></div>
+                    </div>
+                    <div class="card-footer">All subjects combined</div>
+                </div>
+            </article>
 
-        <div class="subject-card peach">
-            <div>
-                <div class="subject-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            <article class="card metric-card span-2" id="majorCard">
+                <div class="card-title">Major subs overall</div>
+                <div class="metric-icon" aria-hidden="true">
+                    <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3.5 5.75C3.5 5.33579 3.16421 5 2.75 5C2.33579 5 2 5.33579 2 5.75V17.75C2 18.9926 3.00736 20 4.25 20H21.25C21.6642 20 22 19.6642 22 19.25C22 18.8358 21.6642 18.5 21.25 18.5H4.25C3.83579 18.5 3.5 18.1642 3.5 17.75V5.75Z" fill="#323544"/>
+                        <path d="M7 10.7773C5.89543 10.7773 5 11.6728 5 12.7773V16.2501C5 16.6643 5.33579 17.0001 5.75 17.0001H8.25C8.66421 17.0001 9 16.6643 9 16.2501V12.7773C9 11.6728 8.10457 10.7773 7 10.7773Z" fill="#323544"/>
+                        <path d="M12.5 5C11.3954 5 10.5 5.89543 10.5 7V16.2501C10.5 16.6643 10.8358 17.0001 11.25 17.0001H13.75C14.1642 17.0001 14.5 16.6643 14.5 16.2501V7C14.5 5.89543 13.6046 5 12.5 5Z" fill="#323544"/>
+                        <path d="M18 8.55859C16.8954 8.55859 16 9.45402 16 10.5586V16.2501C16 16.6643 16.3358 17.0001 16.75 17.0001H19.25C19.6642 17.0001 20 16.6643 20 16.2501V10.5586C20 9.45402 19.1046 8.55859 18 8.55859Z" fill="#323544"/>
                     </svg>
                 </div>
-                <div class="subject-name">Computer Networks</div>
-            </div>
-            <div class="subject-percentage">71%</div>
-            <div class="arrow-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-            </div>
-        </div>
-    </div>
+
+                <div class="major-edit-icon" id="majorEdit" title="Select major subjects">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#323544" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-pencil-discount">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+                        <path d="M13.5 6.5l4 4" />
+                        <path d="M16 21l5 -5" />
+                        <path d="M21 21v.01" />
+                        <path d="M16 16v.01" />
+                    </svg>
+                </div>
+
+                <div class="card-body">
+                    <div class="half-shell">
+                        <svg viewBox="0 0 140 80">
+                            <path class="half-outer-ring" d="M15 70 A55 55 0 0 1 125 70" />
+                            <path class="half-inner-value" id="majorHalfPath" d="M28 70 A40 40 0 0 1 112 70" />
+                        </svg>
+                        <div class="half-center-text" id="majorPercent">0%</div>
+                    </div>
+                    <div class="card-footer" id="majorFooter">Select major, click pencil button</div>
+                </div>
+
+                <div class="major-modal" id="majorModal">
+                    <div class="major-modal-content">
+                        <div class="major-modal-subtitle">
+                            Select major subjects to calculate major overall.
+                        </div>
+                        <div class="major-modal-list" id="majorList">
+                            <label>
+                                <input type="checkbox" value="Mathematics" class="major-checkbox" />
+                                <span>Mathematics</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" value="Physics" class="major-checkbox" />
+                                <span>Physics</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" value="Chemistry" class="major-checkbox" />
+                                <span>Chemistry</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" value="Computer Science" class="major-checkbox" />
+                                <span>Computer Science</span>
+                            </label>
+                        </div>
+                        <div class="major-modal-actions">
+                            <button type="button" class="btn-ghost" id="majorCancel">Cancel</button>
+                            <button type="button" class="btn-primary" id="majorSave">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card info-card span-full">
+                <div class="summary-header">
+                    <span class="summary-title">Attendance summary</span>
+                    <span class="summary-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#323544" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="14" rx="2"></rect>
+                        <path d="M7 9h10"></path>
+                        <path d="M7 13h4"></path>
+                      </svg>
+                    </span>
+                </div>
+                <div class="info-card-body" id="summaryBody">
+                    <ul>
+                        <li>Overall attendance is 75% for this period.</li>
+                        <li>Major subjects are not selected yet. Choose majors to track their combined attendance.</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="card subject-card purple span-2">
+                <div class="subject-header">
+                    <span class="subject-name">Mathematics</span>
+                    <span class="subject-icon" aria-hidden="true">
+                      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                        <path stroke="#323544" stroke-linejoin="round" d="m17 13 3.4641-2V7L17 5l-3.4641 2v4M17 13l-3.4641-2M17 13v4l-7.00001 4M17 13V9m0 4-7.00001 4m3.53591-6L10.5 12.7348M9.99999 21l-3.4641-2.1318M9.99999 21v-4m-3.4641 2v-.1318m0 0V15L10.5 12.7348m-3.96411 6.1334L3.5 17V5m0 0L7 3l3.5 2m-7 0 2.99999 2M10.5 5v7.7348M10.5 5 6.49999 7M17 9l3.5-2M17 9l-3.5-2M9.99999 17l-3.5-2m0 .5V7"/>
+                      </svg>
+                    </span>
+                </div>
+                <div class="subject-meta-group">
+                    <div class="subject-meta">Total classes - 22</div>
+                    <div class="subject-meta">Attended - 18</div>
+                </div>
+                <div class="subject-percentage">82%</div>
+            </article>
+
+            <article class="card subject-card subject-2 span-2">
+                <div class="subject-header">
+                    <span class="subject-name">Physics</span>
+                    <span class="subject-icon" aria-hidden="true">
+                      <svg class="w-[38px] h-[38px]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#323544" viewBox="0 0 24 24">
+                        <path d="M20 14h-2.722L11 20.278a5.511 5.511 0 0 1-.9.722H20a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1ZM9 3H4a1 1 0 0 0-1 1v13.5a3.5 3.5 0 1 0 7 0V4a1 1 0 0 0-1-1ZM6.5 18.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2ZM19.132 7.9 15.6 4.368a1 1 0 0 0-1.414 0L12 6.55v9.9l7.132-7.132a1 1 0 0 0 0-1.418Z"/>
+                      </svg>
+                    </span>
+                </div>
+                <div class="subject-meta-group">
+                    <div class="subject-meta">Total classes - 20</div>
+                    <div class="subject-meta">Attended - 15</div>
+                </div>
+                <div class="subject-percentage">75%</div>
+            </article>
+
+            <article class="card subject-card mint span-2">
+                <div class="subject-header">
+                    <span class="subject-name">Computer Science</span>
+                    <span class="subject-icon" aria-hidden="true">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M11.9933 3.50879C11.6316 3.50879 11.2683 3.58158 10.9266 3.7263L3.4825 6.85273C3.06333 7.02875 3.07417 7.62121 3.4925 7.79726L10.9775 10.8086C11.6332 11.0786 12.3667 11.0786 13.0225 10.8086L20.5075 7.79726C20.9266 7.63137 20.9266 7.02875 20.5175 6.85273L13.0533 3.7263C12.7179 3.58228 12.3575 3.5083 11.9933 3.50879ZM21.5 8.66308C21.4365 8.6635 21.3736 8.67644 21.315 8.70117L12.9716 11.9825C12.8783 12.0213 12.7984 12.0874 12.742 12.1723C12.6857 12.2573 12.6554 12.3574 12.655 12.4598V19.989C12.6558 20.0714 12.6763 20.1524 12.7148 20.225C12.7533 20.2975 12.8087 20.3595 12.876 20.4055C12.9433 20.4515 13.0207 20.4801 13.1014 20.4889C13.1821 20.4978 13.2637 20.4865 13.3392 20.4562L21.6833 17.1639C21.7769 17.1286 21.8574 17.0649 21.9141 16.9814C21.9708 16.898 22.0007 16.7989 22 16.6975V9.16836C21.9991 9.03426 21.946 8.90598 21.8523 8.81146C21.7587 8.71694 21.632 8.66305 21.5 8.66308ZM2.56333 8.69609C2.48934 8.69343 2.41561 8.70634 2.34678 8.73399C2.27794 8.76166 2.21548 8.80352 2.16333 8.85688C2.07167 8.95082 2 9.06425 2 9.19965V16.271C2 16.645 2.42916 16.8947 2.75667 16.728L10.7116 12.8441C11.1 12.6579 11.07 12.0756 10.6608 11.9198L2.73583 8.73246C2.68113 8.70923 2.62262 8.69746 2.56333 8.69609Z" fill="#323544"/>
+                      </svg>
+                    </span>
+                </div>
+                <div class="subject-meta-group">
+                    <div class="subject-meta">Total classes - 21</div>
+                    <div class="subject-meta">Attended - 16</div>
+                </div>
+                <div class="subject-percentage">76%</div>
+            </article>
+
+            <article class="card subject-card peach span-2">
+                <div class="subject-header">
+                    <span class="subject-name">Computer Science</span>
+                    <span class="subject-icon" aria-hidden="true">
+                      <svg class="w-[38px] h-[38px]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#323544" viewBox="0 0 24 24">
+                        <path d="M3 4.92857C3 3.90506 3.80497 3 4.88889 3H19.1111C20.195 3 21 3.90506 21 4.92857V13h-3v-2c0-.5523-.4477-1-1-1h-4c-.5523 0-1 .4477-1 1v2H3V4.92857ZM3 15v1.0714C3 17.0949 3.80497 18 4.88889 18h3.47608L7.2318 19.3598c-.35356.4243-.29624 1.0548.12804 1.4084.42428.3536 1.05484.2962 1.40841-.128L10.9684 18h2.0632l2.2002 2.6402c.3535.4242.9841.4816 1.4084.128.4242-.3536.4816-.9841.128-1.4084L15.635 18h3.4761C20.195 18 21 17.0949 21 16.0714V15H3Z"/>
+                        <path d="M16 12v1h-2v-1h2Z"/>
+                      </svg>
+                    </span>
+                </div>
+                <div class="subject-meta-group">
+                    <div class="subject-meta">Total classes - 14</div>
+                    <div class="subject-meta">Attended - 11</div>
+                </div>
+                <div class="subject-percentage">79%</div>
+            </article>
+
+        </section>
+    </section>
 </div>
 
 <!-- AI BOARD OVERLAY -->
@@ -2066,6 +2742,179 @@ Once you connect Gemini and your attendance backend, this will show real, detail
 
         promptInput.value = "";
         sendBtn.classList.remove("visible");
+    });
+</script>
+
+<!-- Flatpickr + Periodical Records JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    const startDateEl = document.getElementById("startDate");
+    const endDateEl = document.getElementById("endDate");
+
+    function updateDisplay(instance) {
+        const dates = instance.selectedDates;
+        const format = d => instance.formatDate(d, "d M Y");
+
+        if (dates.length === 0) {
+            startDateEl.textContent = "Select date";
+            startDateEl.classList.add("empty");
+            endDateEl.textContent = "Select date";
+            endDateEl.classList.add("empty");
+        } else if (dates.length === 1) {
+            startDateEl.textContent = format(dates[0]);
+            startDateEl.classList.remove("empty");
+            endDateEl.textContent = "Select date";
+            endDateEl.classList.add("empty");
+        } else {
+            startDateEl.textContent = format(dates[0]);
+            startDateEl.classList.remove("empty");
+            endDateEl.textContent = format(dates[1]);
+            endDateEl.classList.remove("empty");
+        }
+    }
+
+    flatpickr("#rangePicker", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        defaultDate: [
+            "2019-10-21",
+            "2019-11-06"
+        ],
+        onReady: function(selectedDates, dateStr, instance) {
+            updateDisplay(instance);
+        },
+        onChange: function(selectedDates, dateStr, instance) {
+            updateDisplay(instance);
+        },
+        onOpen: function() {
+            document.querySelector(".calendar-icon").style.color = "#4b5563";
+        },
+        onClose: function() {
+            document.querySelector(".calendar-icon").style.color = "#9ca3af";
+        }
+    });
+
+    /* --- JS for dynamic font scaling --- */
+
+    function getLineCount(element) {
+        const cs = window.getComputedStyle(element);
+        const lineHeight = parseFloat(cs.lineHeight) || 1.2 * parseFloat(cs.fontSize);
+        return element.scrollHeight / lineHeight;
+    }
+
+    function adjustSubjectFont(subjectNameEl) {
+        const MAX_LINES = 2.1;
+
+        subjectNameEl.style.fontSize = '14px';
+        let currentSize = 14;
+
+        while (getLineCount(subjectNameEl) > MAX_LINES && currentSize > 10) {
+            currentSize -= 0.5;
+            subjectNameEl.style.fontSize = currentSize + 'px';
+            if (currentSize <= 10.5) break;
+        }
+    }
+
+    /* Major subjects selection & calculation */
+    const subjectsData = {
+        "Mathematics of division": { attended: 18, total: 22 },
+        "Physics": { attended: 15, total: 20 },
+        "fundamental of financial investment": { attended: 16, total: 21 },
+        "Computer Science": { attended: 11, total: 14 }
+    };
+
+    let majorSubjects = []; // selected majors
+
+    const majorModal = document.getElementById("majorModal");
+    const majorEdit = document.getElementById("majorEdit");
+    const majorSave = document.getElementById("majorSave");
+    const majorCancel = document.getElementById("majorCancel");
+    const majorCheckboxes = document.querySelectorAll(".major-checkbox");
+    const majorPercentEl = document.getElementById("majorPercent");
+    const majorFooterEl = document.getElementById("majorFooter");
+    const majorHalfPath = document.getElementById("majorHalfPath");
+    const summaryBodyEl = document.getElementById("summaryBody");
+
+    function openMajorModal() {
+        majorCheckboxes.forEach(cb => {
+            cb.checked = majorSubjects.includes(cb.value);
+        });
+        majorModal.style.display = "block";
+    }
+
+    function closeMajorModal() {
+        majorModal.style.display = "none";
+    }
+
+    function updateAttendanceSummary(overallPercent, majorPercent, majorsCount) {
+        const lines = [];
+        lines.push(`Overall attendance is ${overallPercent}% for this period.`);
+
+        if (majorsCount === 0) {
+            lines.push("Major subjects are not selected yet. Choose majors to track their combined attendance.");
+        } else if (majorPercent < 75) {
+            lines.push(`Major subjects are at ${majorPercent}%, which is below the 75% safety threshold.`);
+        } else {
+            lines.push(`Major subjects are at ${majorPercent}%, which is above the 75% safety threshold.`);
+        }
+
+        summaryBodyEl.innerHTML = "<ul>" + lines.map(l => `<li>${l}</li>`).join("") + "</ul>";
+    }
+
+    function updateMajorCard() {
+        const overallPercent = 75;
+
+        if (majorSubjects.length === 0) {
+            majorPercentEl.textContent = "0%";
+            majorFooterEl.textContent = "Select major, click pencil button";
+            majorHalfPath.style.strokeDashoffset = 100;
+            updateAttendanceSummary(overallPercent, 0, 0);
+            return;
+        }
+
+        let totalAttended = 0;
+        let totalClasses = 0;
+
+        majorSubjects.forEach(name => {
+            const data = subjectsData[name];
+            if (data) {
+                totalAttended += data.attended;
+                totalClasses += data.total;
+            }
+        });
+
+        const percent = totalClasses > 0 ? Math.round((totalAttended / totalClasses) * 100) : 0;
+        majorPercentEl.textContent = percent + "%";
+        majorFooterEl.textContent = majorSubjects.length + " subjects combined";
+
+        const offset = 100 - Math.max(0, Math.min(100, percent));
+        majorHalfPath.style.strokeDashoffset = offset;
+
+        updateAttendanceSummary(overallPercent, percent, majorSubjects.length);
+    }
+
+    majorEdit.addEventListener("click", openMajorModal);
+    majorCancel.addEventListener("click", closeMajorModal);
+
+    majorSave.addEventListener("click", () => {
+        const selected = [];
+        majorCheckboxes.forEach(cb => {
+            if (cb.checked) selected.push(cb.value);
+        });
+        majorSubjects = selected;
+        updateMajorCard();
+        closeMajorModal();
+    });
+
+    updateAttendanceSummary(75, 0, 0);
+    updateMajorCard();
+
+    // Run the dynamic font adjustment when the page loads
+    document.querySelectorAll('.card.subject-card .subject-name').forEach(adjustSubjectFont);
+
+    // Optional: Re-run on window resize if the layout changes significantly
+    window.addEventListener('resize', () => {
+        document.querySelectorAll('.card.subject-card .subject-name').forEach(adjustSubjectFont);
     });
 </script>
 </body>
