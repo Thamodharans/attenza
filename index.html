@@ -5,14 +5,11 @@
     <meta name="theme-color" content="#8b7cc8">  
     <link rel="apple-touch-icon" href="./icons/icon-192.png">  
     <meta charset="UTF-8">  
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">  <!-- Fonts -->  
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">  
-<!-- Notebook page fonts -->  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">  
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap" rel="stylesheet">  
 <link href="https://fonts.googleapis.com/css2?family=Cedarville+Cursive&display=swap" rel="stylesheet">  
 <link href="https://fonts.googleapis.com/css2?family=Cabin+Sketch:wght@400;700&display=swap" rel="stylesheet">  
 
-<!-- Flatpickr CSS for Periodical records -->  
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">  
 
 <title>ATTENZA - for Dispur College</title>  
@@ -1890,28 +1887,520 @@
         border: none;  
     }  
 
-    .card.subject-card.mint {  
-        background: linear-gradient(135deg, #a8ddc4 0%, #7cc9a5 100%);  
-        border: none;  
-    }  
-
-    .card.subject-card.peach {  
-        background: linear-gradient(135deg, #ffccbc 0%, #ffab91 100%);  
-        border: none;  
-    }  
-
     .card.subject-card.subject-2 {  
         background: var(--subject-2-bg);  
         border: none;  
     }  
-</style>
 
+    /* ---------------- DATE-WISE RECORDS SECTION STYLES (NEW) ---------------- */
+    
+    :root {
+      --bg: #f5f5fb;
+      --card-bg: #ffffff;
+      --primary: #5b4bff;
+      --primary-soft: #ebe9ff;
+      --text-main: #222222;
+      --text-muted: #777777;
+      --border-soft: #e2e2f0;
+      --shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.08);
+      --status-present: #16a34a;
+      --status-absent: #dc2626;
+      --status-notheld: #6b7280;
+    }
+
+    /* .app-shell styles removed and replaced with .periodical-section */
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 24px; /* Added padding to separate from previous section */
+      margin-bottom: 8px;
+    }
+
+    .app-header .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .app-header h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    .app-header .subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .month-year-select {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      background: #f9fafb;
+      gap: 6px;
+      flex-shrink: 0;
+      min-width: 0;
+      max-width: 160px;
+    }
+
+    .month-year-select .edit-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      opacity: 0.9;
+    }
+
+    .month-year-select .edit-icon svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+      stroke: #374151; /* Set a default stroke color */
+      fill: #374151;
+    }
+
+    .month-year-select select {
+      border: none;
+      background: transparent;
+      padding: 2px 0;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      text-align: left;
+      flex: 0 0 auto;
+      min-width: 0;
+      white-space: nowrap;
+    }
+
+    .date-strip-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .date-strip {
+      flex: 1;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 4px 2px 2px;
+      scroll-behavior: smooth;
+    }
+
+    .date-strip::-webkit-scrollbar {
+      display: none;
+    }
+
+    .date-item {
+      flex: 0 0 auto;
+      min-width: 52px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      padding: 8px 4px;
+      background: #f3f4ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      cursor: pointer;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .date-item .day-number {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .date-item.selected {
+      background: var(--primary);
+      border-color: transparent;
+      color: #ffffff;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .date-item:not(.selected):hover {
+      background: #e5e7ff;
+      border-color: #e0e7ff;
+      color: #111827;
+    }
+
+    .cards-container {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .empty-state {
+      border-radius: 20px;
+      border: 1px dashed #d1d5db;
+      padding: 18px;
+      background: #f9fafb;
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .record-card {
+      border-radius: 20px;
+      padding: 14px 14px 10px;
+      background: linear-gradient(135deg, #fefce8, #f9fafb);
+      border: 1px solid #facc15;
+      box-shadow: 0 8px 18px rgba(234, 179, 8, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .record-card:nth-child(2n) {
+      background: linear-gradient(135deg, #eff6ff, #f9fafb);
+      border-color: #60a5fa;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.15);
+    }
+
+    .record-card:nth-child(3n) {
+      background: linear-gradient(135deg, #f5f3ff, #f9fafb);
+      border-color: #a855f7;
+      box-shadow: 0 8px 18px rgba(168, 85, 247, 0.18);
+    }
+
+    .record-card:nth-child(4n) {
+      background: linear-gradient(135deg, #fff7ed, #ecfdf5);
+      border-color: #fb923c;
+      box-shadow: 0 8px 18px rgba(251, 146, 60, 0.18);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card-header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      flex: 1 1 0%;
+    }
+
+    .subject-name {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    /* ==== CLEAN, SINGLE-LINE INFO ROW (time | room | faculty) ==== */
+    .meta-line {
+      font-size: 0.82rem;
+      color: #4b5563;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+      flex-wrap: nowrap; /* keep in one line as much as possible */
+    }
+
+    .meta-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap; /* prevent internal wrapping */
+      flex: 0 0 auto;
+    }
+
+    .meta-item.faculty {
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .meta-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: transparent;
+      border: none;
+      outline: none;
+    }
+
+    .meta-icon svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+      stroke: currentColor;
+      fill: none;
+      background: transparent;
+    }
+
+    .meta-text {
+      font-size: 0.8rem;
+    }
+
+    .status-pill {
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(31, 41, 55, 0.08);
+      color: #111827;
+      white-space: nowrap;
+      width: 80px;
+      justify-content: center;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    .status-present {
+      background: rgba(22, 163, 74, 0.12);
+      color: var(--status-present);
+    }
+
+    .status-absent {
+      background: rgba(220, 38, 38, 0.10);
+      color: var(--status-absent);
+    }
+
+    .status-notheld {
+      background: rgba(55, 65, 81, 0.12);
+      color: var(--status-notheld);
+    }
+
+    .remarks {
+      font-size: 0.84rem;
+      color: #4b5563;
+      margin-top: 2px;
+    }
+
+    .remarks-label {
+      font-size: 0.74rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #9ca3af;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .edit-card-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.22);
+      color: #111827;
+      transition: background 0.12s, transform 0.08s, box-shadow 0.12s, border-color 0.12s;
+    }
+
+    .edit-card-btn svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    .edit-card-btn:hover {
+      background: rgba(255, 255, 255, 0.26);
+      border-color: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.28);
+    }
+
+    .edit-card-btn:active {
+      transform: translateY(1px) scale(0.97);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.22);
+    }
+
+    .edit-card-btn-label {
+      font-weight: 500;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 40;
+    }
+
+    .modal-backdrop.hidden {
+      display: none;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 420px;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 18px 18px 16px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .modal-subject {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .modal select,
+    .modal textarea {
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      padding: 6px 8px;
+      font-size: 0.9rem;
+      outline: none;
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    .modal select:focus,
+    .modal textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(88, 80, 238, 0.35);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: background 0.12s, transform 0.08s, box-shadow 0.12s;
+    }
+
+    .btn-secondary {
+      background: #f9fafb;
+      border-color: #e5e7eb;
+      color: #374151;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 8px 18px rgba(88, 80, 238, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: #4338ca;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        /* body background style is kept from Attenza original for consistency */
+      }
+      .app-shell {
+        /* This class is removed in the HTML to avoid conflicts */
+        padding: 16px 0 24px;
+        border-radius: 0;
+      }
+      .app-header {
+        flex-direction: row;
+        align-items: center;
+      }
+      .app-header .title-block {
+        flex: 1;
+      }
+      .app-header h1 {
+        font-size: 1.15rem;
+      }
+      .card-header {
+        align-items: flex-start;
+      }
+    }
+</style>
 </head>  
+
 <body>  
 <div class="header" id="header">  
     <div class="top-bar">  
         <div class="left-section">  
-            <!-- MENU BUTTON -->  
             <button class="icon-btn" aria-label="Menu">  
                 <div class="menu-mini"><span></span></div>  
             </button>  <div class="brand-container">  
@@ -1920,7 +2409,6 @@
         </div>  
     </div>  
 
-    <!-- NOTIFICATION BUTTON -->  
     <button class="icon-btn notif-rev" aria-label="Notifications">  
         <svg  
             viewBox="0 0 24 24"  
@@ -2018,7 +2506,6 @@
 </span>
 
 </div>  <div class="content-body">  
-    <!-- HERO / WELCOME -->  
     <div class="welcome-section">  
         <div class="welcome-content">  
             <div class="welcome-text-content">  
@@ -2037,7 +2524,6 @@
     </div>  
 </div>  
 
-<!-- NOTEBOOK STYLE PAGE CARD -->  
 <div class="notebook-section">  
     <div class="page">  
         <img src="Image/your-logo.png" alt="Logo" class="note-logo">  
@@ -2148,7 +2634,6 @@
     </div>  
 </div>  
 
-<!-- NEW PERIODICAL RECORDS SECTION (replacing old Subjects section) -->  
 <section class="periodical-section">  
     <header class="periodical-header">  
         <h2>Periodical records</h2>  
@@ -2353,7 +2838,56 @@
     </section>  
 </section>
 
-</div>  <!-- AI BOARD OVERLAY -->  <div class="ai-board-overlay">  
+<section class="periodical-section" id="dateWiseRecordsSection">
+    <header class="app-header">
+        <div class="title-block">
+            <h1>Date-wise Records</h1>
+            <span class="subtitle" id="selectedDateLabel">Loading…</span>
+        </div>
+
+        <div class="month-year-select">
+            <span class="edit-icon" aria-hidden="true">
+                <svg clip-rule="evenodd" fill-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="m19 20.25c0-.402-.356-.75-.75-.75-2.561 0-11.939 0-14.5 0-.394 0-.75.348-.75.75s.356.75.75.75h14.5c.394 0 .75-.348.75-.75zm-7.403-3.398 9.124-9.125c.171-.171.279-.423.279-.684 0-.229-.083-.466-.28-.662l-3.115-3.104c-.185-.185-.429-.277-.672-.277s-.486.092-.672.277l-9.143 9.103c-.569 1.763-1.555 4.823-1.626 5.081-.02.075-.029.15-.029.224 0 .461.349.848.765.848.511 0 .991-.189 5.369-1.681zm-3.27-3.342 2.137 2.137-3.168 1.046zm.955-1.166 7.651-7.616 2.335 2.327-7.637 7.638z" />
+                </svg>
+            </span>
+            <select id="monthYearSelect" aria-label="Month and year"></select>
+        </div>
+    </header>
+
+    <section class="date-strip-wrapper" aria-label="Date picker">
+        <div class="date-strip" id="dateStrip"></div>
+    </section>
+
+    <section class="cards-container" id="dateCardsContainer" aria-label="Attendance records"></section>
+</section>
+
+</div>  <div class="modal-backdrop hidden" id="editModal">
+    <div class="modal">
+        <h3>Edit record</h3>
+        <div class="modal-subject" id="modalSubject"></div>
+
+        <div class="form-group">
+            <label for="modalStatus">Status</label>
+            <select id="modalStatus">
+                <option value="present">Present</option>
+                <option value="absent">Absent</option>
+                <option value="not-held">Class not held</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="modalRemarks">Remarks / Notes</label>
+            <textarea id="modalRemarks" placeholder="Add your notes for this class"></textarea>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-secondary" id="modalCancel">Cancel</button>
+            <button class="btn btn-primary" id="modalSave">Save changes</button>
+        </div>
+    </div>
+</div>
+<div class="ai-board-overlay">  
     <div class="ai-board" id="aiBoard">  
         <div class="ai-board-header">  
             <h2 class="ai-title">Attenza AI</h2>  
@@ -2389,7 +2923,7 @@ Once you connect Gemini and your attendance backend, this will show real, detail
     </div>  
 </div>
 
-</div>  <!-- FIXED AI CARD AT BOTTOM -->  <div class="ai-card-container">  
+</div>  <div class="ai-card-container">  
     <div class="see-more-btn">  
         <div class="logo-loader-wrapper">  
             <div class="loader">  
@@ -2729,7 +3263,7 @@ Once you connect Gemini and your attendance backend, this will show real, detail
         promptInput.value = "";  
         sendBtn.classList.remove("visible");  
     });  
-</script>  <!-- Flatpickr + Periodical Records JS -->  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>  <script>  
+</script>  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>  <script>  
     const startDateEl = document.getElementById("startDate");  
     const endDateEl = document.getElementById("endDate");  
   
@@ -2899,5 +3433,389 @@ Once you connect Gemini and your attendance backend, this will show real, detail
         document.querySelectorAll('.card.subject-card .subject-name').forEach(adjustSubjectFont);  
     });  
 </script>
+<script>
+    /* ---------------- DATE-WISE RECORDS JS (NEW) ---------------- */
+    const attendanceData = {
+      "2026-01-02": [
+        {
+          subject: "Data Structures",
+          time: "09:00 – 10:00",
+          room: "C-204",
+          faculty: "Prof. Mehta",
+          remarks: "Intro to trees. Bring previous assignment.",
+          status: "present"
+        },
+        {
+          subject: "Engineering Mathematics",
+          time: "11:00 – 12:00",
+          room: "A-103",
+          faculty: "Dr. Rao",
+          remarks: "Missed quiz, check makeup options.",
+          status: "absent"
+        },
+        {
+          subject: "Computer Networks",
+          time: "13:00 – 14:00",
+          room: "Lab-2",
+          faculty: "Mr. Sharma",
+          remarks: "Configured basic routing tables.",
+          status: "present"
+        },
+        {
+          subject: "Discrete Mathematics",
+          time: "15:00 – 16:00",
+          room: "B-210",
+          faculty: "Dr. Iyer",
+          remarks: "Revision of combinatorics; test next week.",
+          status: "present"
+        }
+      ],
+      "2026-01-03": [
+        {
+          subject: "Operating Systems",
+          time: "10:00 – 11:00",
+          room: "Lab-1",
+          faculty: "Ms. Kulkarni",
+          remarks: "Lab cancelled due to network issue.",
+          status: "not-held"
+        }
+      ]
+    };
+
+    const monthYearSelect = document.getElementById("monthYearSelect");
+    const dateStrip = document.getElementById("dateStrip");
+    const cardsContainer = document.getElementById("dateCardsContainer"); // Renamed ID
+    const selectedDateLabel = document.getElementById("selectedDateLabel");
+
+    const editModal = document.getElementById("editModal");
+    const modalSubject = document.getElementById("modalSubject");
+    const modalStatus = document.getElementById("modalStatus");
+    const modalRemarks = document.getElementById("modalRemarks");
+    const modalCancel = document.getElementById("modalCancel");
+    const modalSave = document.getElementById("modalSave");
+
+    const monthNames = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    let currentYear = 2026;
+    let currentMonth = 0;
+    let selectedDateKey = null;
+    let editContext = null;
+
+    function initSelectors() {
+      const startYear = 2024;
+      const endYear = 2030;
+
+      for (let y = startYear; y <= endYear; y++) {
+        for (let m = 0; m < 12; m++) {
+          const opt = document.createElement("option");
+          const monthLabel = monthNames[m];
+          const valueMonth = String(m + 1).padStart(2, "0");
+          opt.value = `${y}-${valueMonth}`;
+          opt.textContent = `${monthLabel} ${y}`;
+          monthYearSelect.appendChild(opt);
+        }
+      }
+
+      const defaultMonth = String(currentMonth + 1).padStart(2, "0");
+      monthYearSelect.value = `${currentYear}-${defaultMonth}`;
+
+      monthYearSelect.addEventListener("change", () => {
+        const [year, month] = monthYearSelect.value.split("-").map(Number);
+        currentYear = year;
+        currentMonth = month - 1;
+        renderMonth();
+      });
+    }
+
+    function getDaysInMonth(year, monthIndex) {
+      return new Date(year, monthIndex + 1, 0).getDate();
+    }
+
+    function formatDateKey(year, monthIndex, day) {
+      const m = String(monthIndex + 1).padStart(2, "0");
+      const d = String(day).padStart(2, "0");
+      return `${year}-${m}-${d}`;
+    }
+
+    function formatReadableDate(year, monthIndex, day) {
+      const date = new Date(year, monthIndex, day);
+      const weekday = date.toLocaleDateString(undefined, { weekday: "short" });
+      const full = date.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+      return `${weekday}, ${full}`;
+    }
+
+    function getStartTimeLabel(timeStr) {
+      if (!timeStr) return "";
+      let part = timeStr.split("–")[0].split("-")[0].trim();
+      part = part.replace(":", ".");
+      return part;
+    }
+
+    function renderMonth() {
+      dateStrip.innerHTML = "";
+      const days = getDaysInMonth(currentYear, currentMonth);
+
+      for (let d = 1; d <= days; d++) {
+        const date = new Date(currentYear, currentMonth, d);
+        const weekday = date.toLocaleDateString(undefined, { weekday: "short" });
+        const dateKey = formatDateKey(currentYear, currentMonth, d);
+
+        const btn = document.createElement("button");
+        btn.className = "date-item";
+        btn.dataset.dateKey = dateKey;
+
+        const dayNameSpan = document.createElement("span");
+        dayNameSpan.className = "day-name";
+        dayNameSpan.textContent = weekday;
+
+        const dayNumberSpan = document.createElement("span");
+        dayNumberSpan.className = "day-number";
+        dayNumberSpan.textContent = String(d).padStart(2, "0");
+
+        btn.appendChild(dayNameSpan);
+        btn.appendChild(dayNumberSpan);
+
+        btn.addEventListener("click", () => {
+          selectDate(dateKey, d);
+          ensureVisible(btn);
+        });
+
+        dateStrip.appendChild(btn);
+      }
+
+      let defaultDay = 1;
+      if (selectedDateKey) {
+        const [yr, m, d] = selectedDateKey.split("-").map(Number);
+        if (yr === currentYear && m === currentMonth + 1) {
+          defaultDay = d;
+        }
+      }
+
+      const defaultKey = formatDateKey(currentYear, currentMonth, defaultDay);
+      const defaultButton = [...dateStrip.children].find(el => el.dataset.dateKey === defaultKey);
+      if (defaultButton) {
+        selectDate(defaultKey, defaultDay);
+        ensureVisible(defaultButton);
+      }
+    }
+
+    function selectDate(dateKey, dayNumber) {
+      selectedDateKey = dateKey;
+
+      [...dateStrip.children].forEach(el =>
+        el.classList.toggle("selected", el.dataset.dateKey === dateKey)
+      );
+
+      const [year, month, day] = dateKey.split("-").map(Number);
+      selectedDateLabel.textContent = formatReadableDate(year, month - 1, dayNumber || day);
+
+      renderCards(dateKey);
+    }
+
+    function renderCards(dateKey) {
+      cardsContainer.innerHTML = "";
+
+      const records = attendanceData[dateKey] || [];
+
+      if (!records.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-state";
+        empty.textContent =
+          "No records saved for this date. Once you add classes, they will appear here with your notes and status.";
+        cardsContainer.appendChild(empty);
+        return;
+      }
+
+      records.forEach((rec, index) => {
+        const card = document.createElement("article");
+        card.className = "record-card";
+
+        const header = document.createElement("div");
+        header.className = "card-header";
+
+        const left = document.createElement("div");
+        left.className = "card-header-left";
+
+        const subject = document.createElement("div");
+        subject.className = "subject-name";
+        subject.textContent = rec.subject;
+        left.appendChild(subject);
+
+        const meta = document.createElement("div");
+        meta.className = "meta-line";
+
+        const startTimeLabel = getStartTimeLabel(rec.time);
+
+        // Time
+        const timeRow = document.createElement("div");
+        timeRow.className = "meta-item";
+        timeRow.innerHTML = `
+          <span class="meta-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+              <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="meta-text">${startTimeLabel}</span>
+        `;
+        meta.appendChild(timeRow);
+
+        // Room
+        const roomRow = document.createElement("div");
+        roomRow.className = "meta-item";
+        roomRow.innerHTML = `
+          <span class="meta-icon" aria-hidden="true">
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" stroke-width="2" d="M20 14H4m6.5 3L8 20m5.5-3 2.5 3M4.88889 17H19.1111c.4909 0 .8889-.4157.8889-.9286V4.92857C20 4.41574 19.602 4 19.1111 4H4.88889C4.39797 4 4 4.41574 4 4.92857V16.0714c0 .5129.39797.9286.88889.9286ZM13 14v-3h4v3h-3Z"/>
+            </svg>
+          </span>
+          <span class="meta-text">${rec.room}</span>
+        `;
+        meta.appendChild(roomRow);
+
+        // Faculty
+        const facultyRow = document.createElement("div");
+        facultyRow.className = "meta-item faculty";
+        facultyRow.innerHTML = `
+          <span class="meta-icon" aria-hidden="true">
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" stroke-width="2" d="M14.7141 15h4.268c.4043 0 .732-.3838.732-.8571V3.85714c0-.47338-.3277-.85714-.732-.85714H6.71411c-.55228 0-1 .44772-1 1v4m10.99999 7v-3h3v3h-3Zm-3 6H6.71411c-.55228 0-1-.4477-1-1 0-1.6569 1.34315-3 3-3h2.99999c1.6569 0 3 1.3431 3 3 0 .5523-.4477 1-1 1Zm-1-9.5c0 1.3807-1.1193 2.5-2.5 2.5s-2.49999-1.1193-2.49999-2.5S8.8334 9 10.2141 9s2.5 1.1193 2.5 2.5Z"/>
+            </svg>
+          </span>
+          <span class="meta-text">${rec.faculty}</span>
+        `;
+        meta.appendChild(facultyRow);
+
+        left.appendChild(meta);
+        header.appendChild(left);
+
+        // Status pill
+        const statusPill = document.createElement("span");
+        statusPill.classList.add("status-pill");
+
+        const statusDot = document.createElement("span");
+        statusDot.className = "status-dot";
+        statusPill.appendChild(statusDot);
+
+        const statusText = document.createElement("span");
+        if (rec.status === "present") {
+          statusPill.classList.add("status-present");
+          statusText.textContent = "Present";
+        } else if (rec.status === "absent") {
+          statusPill.classList.add("status-absent");
+          statusText.textContent = "Absent";
+        } else {
+          statusPill.classList.add("status-notheld");
+          statusText.textContent = "not held";
+        }
+        statusPill.appendChild(statusText);
+
+        header.appendChild(statusPill);
+        card.appendChild(header);
+
+        const remarksWrapper = document.createElement("div");
+        const remarksLabel = document.createElement("div");
+        remarksLabel.className = "remarks-label";
+        remarksLabel.textContent = "Remarks";
+        const remarksBody = document.createElement("div");
+        remarksBody.className = "remarks";
+        remarksBody.textContent = rec.remarks || "No notes yet.";
+        remarksWrapper.appendChild(remarksLabel);
+        remarksWrapper.appendChild(remarksBody);
+
+        card.appendChild(remarksWrapper);
+
+        const footer = document.createElement("div");
+        footer.className = "card-footer";
+
+        const editBtn = document.createElement("button");
+        editBtn.className = "edit-card-btn";
+        editBtn.title = "Edit record";
+        editBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+               class="icon icon-tabler icon-tabler-pencil-discount">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+            <path d="M13.5 6.5l4 4" />
+            <path d="M16 21l5 -5" />
+            <path d="M21 21v.01" />
+            <path d="M16 16v.01" />
+          </svg>
+          <span class="edit-card-btn-label">Edit records</span>
+        `;
+        editBtn.addEventListener("click", () => openEditModal(dateKey, index));
+
+        footer.appendChild(editBtn);
+        card.appendChild(footer);
+
+        cardsContainer.appendChild(card);
+      });
+    }
+
+    function ensureVisible(element) {
+      const parent = dateStrip;
+      const parentRect = parent.getBoundingClientRect();
+      const elRect = element.getBoundingClientRect();
+
+      if (elRect.left < parentRect.left) {
+        parent.scrollLeft -= (parentRect.left - elRect.left) + 10;
+      } else if (elRect.right > parentRect.right) {
+        parent.scrollLeft += (elRect.right - parentRect.right) + 10;
+      }
+    }
+
+    function openEditModal(dateKey, index) {
+      const rec = (attendanceData[dateKey] || [])[index];
+      if (!rec) return;
+
+      editContext = { dateKey, index };
+
+      const startTimeLabel = getStartTimeLabel(rec.time);
+      modalSubject.textContent = `${rec.subject} · ${startTimeLabel} · ${rec.room}`;
+      modalStatus.value = rec.status;
+      modalRemarks.value = rec.remarks || "";
+
+      editModal.classList.remove("hidden");
+    }
+
+    function closeEditModal() {
+      editContext = null;
+      editModal.classList.add("hidden");
+    }
+
+    modalCancel.addEventListener("click", closeEditModal);
+
+    modalSave.addEventListener("click", () => {
+      if (!editContext) return;
+      const { dateKey, index } = editContext;
+      const list = attendanceData[dateKey];
+      if (!list || !list[index]) return;
+
+      list[index].status = modalStatus.value;
+      list[index].remarks = modalRemarks.value.trim();
+
+      closeEditModal();
+      renderCards(dateKey);
+    });
+
+    editModal.addEventListener("click", (e) => {
+      if (e.target === editModal) {
+        closeEditModal();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !editModal.classList.contains("hidden")) {
+        closeEditModal();
+      }
+    });
+
+    initSelectors();
+    renderMonth();
+  </script>
 </body>  
 </html>
+
