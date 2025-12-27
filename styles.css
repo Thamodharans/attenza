@@ -1635,6 +1635,16 @@
         border: none;  
     }  
 
+    .card.subject-card.mint {  
+        background: linear-gradient(135deg, #a8ddc4 0%, #7cc9a5 100%);  
+        border: none;  
+    }  
+
+    .card.subject-card.peach {  
+        background: linear-gradient(135deg, #ffccbc 0%, #ffab91 100%);  
+        border: none;  
+    }  
+
     .card.subject-card.subject-2 {  
         background: var(--subject-2-bg);  
         border: none;  
