@@ -518,7 +518,7 @@ body.auth-active .menu-btn span {
   import { 
     getAuth, 
     GoogleAuthProvider, 
-    signInWithPopup, 
+    signInWithRedirect, 
     fetchSignInMethodsForEmail, 
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword,
@@ -547,7 +547,6 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -576,11 +575,10 @@ const app = initializeApp(firebaseConfig);
   // --- LOGIC: GOOGLE LOGIN ---
   async function handleGoogleLogin() {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      // onAuthStateChanged will handle the profile check
+      await signInWithRedirect(auth, googleProvider);
     } catch (error) {
-      console.error("Google login error:", error);
-      alert(error.message);
+       console.error("Google login error:", error);
+       alert(error.message);
     }
   }
 
@@ -707,7 +705,7 @@ const app = initializeApp(firebaseConfig);
       });
 
       // Redirect happens automatically via onAuthStateChanged -> checkUserProfile
-      window.location.href = "dashboard.html";
+      window.location.href = "index.html";
 
     } catch (error) {
       console.error("Registration error:", error);
