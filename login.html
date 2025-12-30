@@ -234,31 +234,6 @@ body.auth-active .menu-btn span {
     position: relative;
 }
 
-/* LOADING OVERLAY */
-#loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg-auth);
-    display: none; /* Hidden by default */
-    align-items: center;
-    justify-content: center;
-    z-index: 50;
-    flex-direction: column;
-}
-.loader-spinner {
-    width: 30px;
-    height: 30px;
-    border: 3px solid #333;
-    border-top: 3px solid var(--purple);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 15px;
-}
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
 /* ================= LANDING UI ================= */
 .hero { display: flex; margin-top: 30px; justify-content: center; align-items: center; }
 .illustration { margin-left: -16px; margin-right: -16px; max-height: 36vh; width: 100%; display: flex; justify-content: center; }
@@ -360,12 +335,6 @@ body.auth-active .menu-btn span {
 </div>
 
 <div id="auth-wrapper" class="dark">
-  
-  <div id="loading-overlay">
-     <div class="loader-spinner"></div>
-     <p class="text-gray-400 text-sm font-medium">Checking Profile...</p>
-  </div>
-
   <div id="view-login" class="min-h-full flex flex-col items-center justify-start pt-0 px-6 transition-all duration-300">
     <div class="w-full flex-1 flex flex-col items-center max-w-sm">
         <div class="text-center mb-6 mt-2">
@@ -545,36 +514,12 @@ body.auth-active .menu-btn span {
 
 </div> 
 
-<script>
-    (function restoreState() {
-        if (sessionStorage.getItem('auth_flow_active') === 'true') {
-            document.body.classList.add('auth-active');
-            const landingView = document.getElementById('landing-view');
-            const authWrapper = document.getElementById('auth-wrapper');
-            const loader = document.getElementById('loading-overlay');
-            
-            if (landingView) {
-                landingView.style.display = 'none';
-                landingView.classList.add('hidden-view');
-            }
-            if (authWrapper) {
-                authWrapper.classList.add('active-view');
-            }
-            // IMPORTANT: Show loader to prevent glitching between Login/Registration
-            if (loader) {
-                loader.style.display = 'flex';
-            }
-            document.getElementById('getStartedBtnArea').classList.add('hide-btn');
-        }
-    })();
-</script>
-
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { 
     getAuth, 
     GoogleAuthProvider, 
-    signInWithRedirect, 
+    signInWithPopup, 
     fetchSignInMethodsForEmail, 
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword,
@@ -620,22 +565,18 @@ body.auth-active .menu-btn span {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       console.log("User detected, checking profile...");
-      // Ensure we are in auth flow visually to prevent weird transitions
-      sessionStorage.setItem('auth_flow_active', 'true'); 
+      // Immediately check profile. Using Popup method, we don't rely on sessionStorage reload logic anymore
       await checkUserProfile(user);
     } else {
       console.log("No user logged in.");
-      // Hide loader if no user found (maybe user cancelled redirect)
-      document.getElementById('loading-overlay').style.display = 'none';
     }
   });
 
-  // --- LOGIC: GOOGLE LOGIN ---
+  // --- LOGIC: GOOGLE LOGIN (POPUP) ---
   async function handleGoogleLogin() {
     try {
-      // Set flag so when page reloads, we show Auth UI immediately
-      sessionStorage.setItem('auth_flow_active', 'true');
-      await signInWithRedirect(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      // The onAuthStateChanged listener will automatically fire and run checkUserProfile
     } catch (error) {
        console.error("Google login error:", error);
        alert(error.message);
@@ -656,7 +597,7 @@ body.auth-active .menu-btn span {
     arrowBtn.disabled = true;
 
     try {
-      // NOTE: YOU MUST DISABLE "EMAIL ENUMERATION PROTECTION" IN FIREBASE CONSOLE FOR THIS TO WORK
+      // NOTE: YOU MUST DISABLE "EMAIL ENUMERATION PROTECTION" IN FIREBASE CONSOLE
       const methods = await fetchSignInMethodsForEmail(auth, emailValue);
       
       if (methods.length === 0) {
@@ -676,7 +617,7 @@ body.auth-active .menu-btn span {
       }
     } catch (error) {
       console.error("Check email error:", error);
-      // Fallback: If error (e.g. security protection enabled), show password to be safe
+      // Fallback: Assume existing and show password field to be safe
       arrowBtn.classList.add('hidden');
       document.getElementById('passwordContainer').classList.remove('hidden');
       document.getElementById('continueBtn').classList.remove('hidden');
@@ -702,7 +643,6 @@ body.auth-active .menu-btn span {
     btn.disabled = true;
 
     try {
-      sessionStorage.setItem('auth_flow_active', 'true');
       await signInWithEmailAndPassword(auth, email, password);
       // onAuthStateChanged will handle redirect
     } catch (error) {
@@ -774,7 +714,7 @@ body.auth-active .menu-btn span {
     }
   }
 
-  // --- LOGIC: CHECK PROFILE (CRITICAL FIX) ---
+  // --- LOGIC: CHECK PROFILE (FORCED SWAP) ---
   async function checkUserProfile(user) {
     try {
         const userRef = doc(db, "users", user.uid);
@@ -787,34 +727,34 @@ body.auth-active .menu-btn span {
             return;
         } 
         
-        // CASE 2: Profile Missing or Incomplete -> Show Registration UI
-        console.log("Profile incomplete. Showing registration.");
+        // CASE 2: Profile Missing or Incomplete -> FORCE Registration UI
+        console.log("Profile incomplete. Forcing registration view.");
         
-        // Ensure Auth UI is visible & Landing is hidden
-        document.getElementById('getStartedBtnArea').classList.add('hide-btn');
-        document.getElementById('landing-view').classList.add('hidden-view');
-        document.body.classList.add('auth-active');
+        // Ensure Auth UI Wrapper is visible (in case user came from landing)
         document.getElementById('landing-view').style.display = 'none';
         document.getElementById('auth-wrapper').classList.add('active-view');
+        document.body.classList.add('auth-active');
+        document.getElementById('getStartedBtnArea').classList.add('hide-btn');
 
-        // Hide Loader
-        document.getElementById('loading-overlay').style.display = 'none';
-
-        // FORCE HIDE Login View / SHOW Registration View
+        // HIDE Login View completely
         document.getElementById('view-login').style.display = 'none';
-        document.getElementById('view-registration').classList.remove('hidden');
-        document.getElementById('view-registration').style.display = 'flex';
+        document.getElementById('view-login').classList.add('hidden');
+
+        // SHOW Registration View
+        const regView = document.getElementById('view-registration');
+        regView.classList.remove('hidden');
+        regView.style.display = 'flex';
         
-        // Pre-fill Email & Name for Google Users
+        // Pre-fill Email
         document.getElementById('regEmailInput').value = user.email;
-        if(user.displayName) {
+        // Pre-fill Name (if available from Google)
+        if (user.displayName) {
              document.getElementById('regFullName').value = user.displayName;
         }
 
     } catch (err) {
         console.error("Error checking profile:", err);
-        alert("Error connecting to database. Please check your connection.");
-        document.getElementById('loading-overlay').style.display = 'none';
+        alert("Connectivity Error: Could not verify user profile.");
     }
   }
 
@@ -866,9 +806,6 @@ menuBtn.addEventListener("click", e => { e.stopPropagation(); menuDropdown.style
 document.addEventListener("click", () => { menuDropdown.style.display = "none"; });
 
 function transitionToAuth() {
-    // Set Session Flag so logic knows we are in Auth Mode
-    sessionStorage.setItem('auth_flow_active', 'true');
-    
     document.getElementById('getStartedBtnArea').classList.add('hide-btn');
     document.getElementById('landing-view').classList.add('hidden-view');
     document.body.classList.add('auth-active');
@@ -928,6 +865,7 @@ function backToLogin(currentViewId) {
     
     const loginView = document.getElementById('view-login');
     loginView.style.display = 'flex';
+    document.getElementById('view-login').classList.remove('hidden'); // Ensure visible
     
     // Reset Login Elements
     document.getElementById('passwordContainer').classList.add('hidden');
