@@ -207,10 +207,11 @@ body.auth-active .menu-btn span {
     opacity: 0;
     transform: translateY(-20px);
     pointer-events: none;
-    position: absolute;
+    position: absolute;  /* Ensures it doesn't take up space */
     top: 0;
     left: 0;
     width: 100%;
+    z-index: -1;
 }
 
 #auth-wrapper {
@@ -513,6 +514,24 @@ body.auth-active .menu-btn span {
 
 </div> 
 
+<script>
+    (function restoreState() {
+        if (sessionStorage.getItem('auth_flow_active') === 'true') {
+            document.body.classList.add('auth-active');
+            const landingView = document.getElementById('landing-view');
+            const authWrapper = document.getElementById('auth-wrapper');
+            if (landingView) {
+                landingView.style.display = 'none';
+                landingView.classList.add('hidden-view');
+            }
+            if (authWrapper) {
+                authWrapper.classList.add('active-view');
+            }
+            document.getElementById('getStartedBtnArea').classList.add('hide-btn');
+        }
+    })();
+</script>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { 
@@ -536,18 +555,17 @@ body.auth-active .menu-btn span {
   } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBjimAKxtrdKBufP5Rw_gUi4BJZRF6AGrs",
-  authDomain: "attenza-21fc2.firebaseapp.com",
-  projectId: "attenza-21fc2",
-  storageBucket: "attenza-21fc2.firebasestorage.app",
-  messagingSenderId: "363087900006",
-  appId: "1:363087900006:web:5072149dc1219b447e2ca7"
-};
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyBjimAKxtrdKBufP5Rw_gUi4BJZRF6AGrs",
+    authDomain: "attenza-21fc2.firebaseapp.com",
+    projectId: "attenza-21fc2",
+    storageBucket: "attenza-21fc2.firebasestorage.app",
+    messagingSenderId: "363087900006",
+    appId: "1:363087900006:web:5072149dc1219b447e2ca7"
+  };
 
-// Initialize Firebase
-
+  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -564,17 +582,22 @@ const firebaseConfig = {
   // --- STATE LISTENER ---
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      console.log("User detected:", user.uid);
+      console.log("User detected, checking profile...");
+      // Ensure we are in auth flow visually to prevent weird transitions
+      sessionStorage.setItem('auth_flow_active', 'true'); 
       await checkUserProfile(user);
     } else {
       console.log("No user logged in.");
-      // Remain on login page
+      // If user manually logged out, clear the session flag
+      // But if we are just loading, we leave it to the session check
     }
   });
 
   // --- LOGIC: GOOGLE LOGIN ---
   async function handleGoogleLogin() {
     try {
+      // Set flag so when page reloads, we show Auth UI immediately
+      sessionStorage.setItem('auth_flow_active', 'true');
       await signInWithRedirect(auth, googleProvider);
     } catch (error) {
        console.error("Google login error:", error);
@@ -599,7 +622,7 @@ const firebaseConfig = {
       const methods = await fetchSignInMethodsForEmail(auth, emailValue);
       
       if (methods.length === 0) {
-        // NEW USER -> Registration View
+        // NEW USER -> Registration View UI
         document.getElementById('regEmailInput').value = emailValue;
         document.getElementById('view-login').style.display = 'none';
         
@@ -607,7 +630,7 @@ const firebaseConfig = {
         regView.classList.remove('hidden');
         regView.style.display = 'flex';
       } else {
-        // EXISTING USER -> Password View
+        // EXISTING USER -> Password View UI
         arrowBtn.classList.add('hidden');
         document.getElementById('passwordContainer').classList.remove('hidden');
         document.getElementById('continueBtn').classList.remove('hidden');
@@ -615,7 +638,7 @@ const firebaseConfig = {
       }
     } catch (error) {
       console.error("Check email error:", error);
-      // Fallback for security restriction or error: Assume existing and show password field
+      // Fallback: Assume existing and show password field to be safe
       arrowBtn.classList.add('hidden');
       document.getElementById('passwordContainer').classList.remove('hidden');
       document.getElementById('continueBtn').classList.remove('hidden');
@@ -641,6 +664,7 @@ const firebaseConfig = {
     btn.disabled = true;
 
     try {
+      sessionStorage.setItem('auth_flow_active', 'true');
       await signInWithEmailAndPassword(auth, email, password);
       // onAuthStateChanged will handle redirect
     } catch (error) {
@@ -683,12 +707,10 @@ const firebaseConfig = {
         user = credential.user;
       } 
       // Scenario 2: Google User (Logged in, just setting up profile)
-      else if (user && password) {
-        // Optional: Link password to Google account if they entered one
-        try {
-            await updatePassword(user, password);
-        } catch (e) {
-            console.warn("Could not link password to Google account:", e);
+      else if (user) {
+        // If password provided, try to link/update (optional)
+        if (password) {
+            try { await updatePassword(user, password); } catch(e) {}
         }
       }
 
@@ -704,8 +726,8 @@ const firebaseConfig = {
         createdAt: serverTimestamp()
       });
 
-      // Redirect happens automatically via onAuthStateChanged -> checkUserProfile
-      window.location.href = "index.html";
+      // Redirect to Dashboard
+      window.location.replace("dashboard.html");
 
     } catch (error) {
       console.error("Registration error:", error);
@@ -714,26 +736,41 @@ const firebaseConfig = {
     }
   }
 
-  // --- LOGIC: CHECK PROFILE ---
+  // --- LOGIC: CHECK PROFILE (CRITICAL FIX) ---
   async function checkUserProfile(user) {
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
+    try {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
 
-    if (userSnap.exists() && userSnap.data().profileComplete === true) {
-        // Redirect to Dashboard
-        window.location.href = "dashboard.html";
-    } else {
-        // Show Profile Setup
-        // Check if we are already on registration view?
+        // CASE 1: Profile Exists AND is Complete -> Go to Dashboard
+        if (userSnap.exists() && userSnap.data().profileComplete === true) {
+            console.log("Profile complete. Redirecting to Dashboard.");
+            window.location.replace("dashboard.html");
+            return;
+        } 
+        
+        // CASE 2: Profile Missing or Incomplete -> Show Registration UI
+        console.log("Profile incomplete. Showing registration.");
+        
+        // Ensure Auth UI is visible
+        document.getElementById('getStartedBtnArea').classList.add('hide-btn');
+        document.getElementById('landing-view').classList.add('hidden-view');
+        document.body.classList.add('auth-active');
+        document.getElementById('landing-view').style.display = 'none';
+        document.getElementById('auth-wrapper').classList.add('active-view');
+
+        // Transition specifically to Registration view
+        document.getElementById('view-login').style.display = 'none';
         const regView = document.getElementById('view-registration');
-        if (regView.classList.contains('hidden')) {
-            // Need to transition to registration view
-            transitionToAuth(); // Ensure auth wrapper is visible
-            document.getElementById('view-login').style.display = 'none';
-            regView.classList.remove('hidden');
-            regView.style.display = 'flex';
-            document.getElementById('regEmailInput').value = user.email;
-        }
+        regView.classList.remove('hidden');
+        regView.style.display = 'flex';
+        
+        // Pre-fill email
+        document.getElementById('regEmailInput').value = user.email;
+
+    } catch (err) {
+        console.error("Error checking profile:", err);
+        // On error, we might stay on login or alert user
     }
   }
 
@@ -785,6 +822,9 @@ menuBtn.addEventListener("click", e => { e.stopPropagation(); menuDropdown.style
 document.addEventListener("click", () => { menuDropdown.style.display = "none"; });
 
 function transitionToAuth() {
+    // Set Session Flag so logic knows we are in Auth Mode
+    sessionStorage.setItem('auth_flow_active', 'true');
+    
     document.getElementById('getStartedBtnArea').classList.add('hide-btn');
     document.getElementById('landing-view').classList.add('hidden-view');
     document.body.classList.add('auth-active');
@@ -821,8 +861,6 @@ function togglePasswordVisibility(id) {
     }
 }
 
-// NOTE: checkEmailAndProceed logic is now inside the Module script above
-
 /* SWITCH TO FORGOT PASSWORD VIEW */
 function switchToForgot() {
     const emailValue = document.getElementById('emailInput').value.trim();
@@ -839,10 +877,12 @@ function switchToForgot() {
     document.getElementById('forgotStateSuccess').classList.add('hidden');
 }
 
-// NOTE: sendResetLink logic is now inside the Module script above
-
 /* GENERIC BACK FUNCTION */
 function backToLogin(currentViewId) {
+    // If coming back from Registration, we are no longer "forced" there by logic, 
+    // unless user is logged in but incomplete. 
+    // But this button is for manual navigation.
+    
     document.getElementById(currentViewId).style.display = 'none';
     document.getElementById(currentViewId).classList.add('hidden');
     
@@ -850,11 +890,8 @@ function backToLogin(currentViewId) {
     loginView.style.display = 'flex';
     
     // Reset Login Elements
-    // Note: We don't clear email input to improve UX
     document.getElementById('passwordContainer').classList.add('hidden');
     document.getElementById('continueBtn').classList.add('hidden');
-    
-    // Reset Arrow/Icon state
     toggleArrow(); 
 }
 </script>
