@@ -506,7 +506,9 @@ body.auth-active .menu-btn span { background: #ffffff; }
     createUserWithEmailAndPassword,
     onAuthStateChanged,
     sendPasswordResetEmail,
-    updatePassword,
+    EmailAuthProvider,
+    linkWithCredential,
+    linkWithPopup,
     signOut
   } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
   import { 
@@ -534,6 +536,20 @@ body.auth-active .menu-btn span { background: #ffffff; }
   const db = getFirestore(app);
   const googleProvider = new GoogleAuthProvider();
 
+  // DOM refs (used across functions)
+  const emailInput = document.getElementById('emailInput');
+  const emailArrowBtn = document.getElementById('emailArrowBtn');
+  const emailIconStatic = document.getElementById('emailIconStatic');
+  const passwordContainer = document.getElementById('passwordContainer');
+  const continueBtn = document.getElementById('continueBtn');
+  const loginPassword = document.getElementById('loginPassword');
+  const regEmailInput = document.getElementById('regEmailInput');
+  const viewLogin = document.getElementById('view-login');
+  const viewRegistration = document.getElementById('view-registration');
+  const forgotEmailDisplay = document.getElementById('forgotEmailDisplay');
+  const forgotStateInitial = document.getElementById('forgotStateInitial');
+  const forgotStateSuccess = document.getElementById('forgotStateSuccess');
+
   // Expose functions to global scope
   window.handleGoogleLogin = handleGoogleLogin;
   window.checkEmailAndProceed = checkEmailAndProceed;
@@ -542,66 +558,107 @@ body.auth-active .menu-btn span { background: #ffffff; }
   window.sendResetLink = sendResetLink;
   window.signOutUser = () => signOut(auth);
 
-  // --- AUTH STATE OBSERVER ---
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      console.log("User detected:", user.email);
-      await checkUserProfile(user);
-    } else {
-      console.log("No user logged in.");
+  // --- AUTH STATE OBSERVER (SAFE) ---
+  const unsub = onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists() && userSnap.data().profileComplete === true) {
+        unsub();
+        window.location.replace("index.html");
+        return;
+      }
+      // If profile not complete, show registration and keep user signed in
+      document.getElementById('landing-view').style.display = 'none';
+      document.getElementById('auth-wrapper').classList.add('active-view');
+      document.body.classList.add('auth-active');
+      document.getElementById('getStartedBtnArea').classList.add('hide-btn');
+
+      document.getElementById('view-login').style.display = 'none';
+      const regView = document.getElementById('view-registration');
+      regView.classList.remove('hidden');
+      regView.style.display = 'flex';
+      document.getElementById('regEmailInput').value = user.email;
+      if (user.displayName) document.getElementById('regFullName').value = user.displayName;
+    } catch (err) {
+      console.error("Profile check error:", err);
     }
   });
 
-  // --- 1. GOOGLE LOGIN ---
+  // --- 1. GOOGLE LOGIN & LINKING ---
   async function handleGoogleLogin() {
     try {
+      const current = auth.currentUser;
+      if (current) {
+        // If user is signed-in (email flow) and wants to link Google
+        const providers = current.providerData.map(p => p.providerId);
+        if (providers.includes('google.com')) {
+          alert('Google is already linked to this account.');
+          return;
+        }
+        // Link Google to existing account
+        await linkWithPopup(current, googleProvider);
+        alert('Google linked to your account successfully.');
+        return;
+      }
+      // Normal Google sign-in
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
-       console.error("Google login error:", error);
-       alert("Google Sign-in failed. Please try again.");
+      console.error('Google login error:', error);
+      alert('Google Sign-in failed. Please try again.');
     }
   }
 
   // --- 2. CHECK EMAIL LOGIC ---
   async function checkEmailAndProceed() {
-    const emailInput = document.getElementById('emailInput');
     const emailValue = emailInput.value.trim();
     if (!emailValue) return;
 
-    const arrowBtn = document.getElementById('emailArrowBtn');
+    const arrowBtn = emailArrowBtn;
     const originalContent = arrowBtn.innerHTML;
-    
-    // UI Loading State
     arrowBtn.innerHTML = '<div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>';
     arrowBtn.disabled = true;
 
     try {
-      // NOTE: Go to Firebase Console -> Auth -> Settings -> User Actions 
-      // and DISABLE "Email enumeration protection" for this to work precisely.
       let methods = [];
       try {
         methods = await fetchSignInMethodsForEmail(auth, emailValue);
       } catch (err) {
-        console.warn("Enumeration protection likely enabled. Defaulting to password view.", err);
-        // Fallback: Assume user exists to protect privacy, show password field
-        methods = ['password']; 
+        console.warn("fetchSignInMethodsForEmail failed", err);
+        methods = [];
       }
-      
+
       if (methods.length === 0) {
         // NEW USER -> Registration
-        console.log("New user detected");
-        document.getElementById('regEmailInput').value = emailValue;
-        document.getElementById('view-login').style.display = 'none';
-        document.getElementById('view-registration').classList.remove('hidden');
-        document.getElementById('view-registration').style.display = 'flex';
-      } else {
-        // EXISTING USER -> Password
-        console.log("Existing user detected");
-        arrowBtn.classList.add('hidden');
-        document.getElementById('passwordContainer').classList.remove('hidden');
-        document.getElementById('continueBtn').classList.remove('hidden');
-        document.getElementById('loginPassword').focus();
+        regEmailInput.value = emailValue;
+        viewLogin.style.display = 'none';
+        viewRegistration.classList.remove('hidden');
+        viewRegistration.style.display = 'flex';
+        return;
       }
+
+      if (methods.includes('password')) {
+        // EXISTING user with password
+        arrowBtn.classList.add('hidden');
+        passwordContainer.classList.remove('hidden');
+        continueBtn.classList.remove('hidden');
+        loginPassword.focus();
+        return;
+      }
+
+      if (methods.includes('google.com')) {
+        // Google-only account
+        alert('This email is linked with Google. Please use the \"Continue with Google\" button.');
+        return;
+      }
+
+      // Fallback: show password option
+      arrowBtn.classList.add('hidden');
+      passwordContainer.classList.remove('hidden');
+      continueBtn.classList.remove('hidden');
+      loginPassword.focus();
+
     } catch (error) {
       console.error("Check email error:", error);
       alert("Something went wrong. Please check your internet.");
@@ -613,28 +670,21 @@ body.auth-active .menu-btn span { background: #ffffff; }
 
   // --- 3. EMAIL LOGIN ---
   async function handleEmailLogin() {
-    const email = document.getElementById('emailInput').value.trim();
-    const password = document.getElementById('loginPassword').value;
+    const email = emailInput.value.trim();
+    const password = loginPassword.value;
 
-    if (!password) {
-      alert("Please enter password");
-      return;
-    }
+    if (!password) { alert('Please enter password'); return; }
 
-    const btn = document.getElementById('continueBtn');
-    const prevText = btn.textContent;
-    btn.textContent = "Verifying...";
-    btn.disabled = true;
+    const btn = continueBtn; const prevText = btn.textContent;
+    btn.textContent = 'Verifying...'; btn.disabled = true;
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged will handle redirect
     } catch (error) {
-      console.error("Login error:", error);
-      let msg = "Login failed.";
-      if(error.code === 'auth/invalid-credential') msg = "Incorrect password or email.";
-      alert(msg);
-      btn.textContent = prevText;
-      btn.disabled = false;
+      console.error('Login error:', error);
+      alert('Login failed. Please check credentials.');
+      btn.textContent = prevText; btn.disabled = false;
     }
   }
 
@@ -648,38 +698,30 @@ body.auth-active .menu-btn span { background: #ffffff; }
     const password = document.getElementById('regPassword').value;
     const email = document.getElementById('regEmailInput').value.trim();
 
-    if (!fullName || !college || !course || !section || !rollNo) {
-      alert("Please fill all fields.");
-      return;
-    }
+    if (!fullName || !college || !course || !section || !rollNo) { alert('Please fill all fields.'); return; }
 
-    const btn = document.querySelector('#view-registration button[onclick="completeRegistration()"]');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = 'Creating...';
-    btn.disabled = true;
-    
+    const btn = document.querySelector('#view-registration button[onclick="completeRegistration()");');
+    // Using a safe selector fallback if query fails
+    const actionBtn = btn || document.querySelector('#view-registration button');
+    const originalText = actionBtn ? actionBtn.innerHTML : 'Creating...';
+    if (actionBtn) { actionBtn.innerHTML = 'Creating...'; actionBtn.disabled = true; }
+
     try {
       let user = auth.currentUser;
 
-      // If not logged in (Email flow)
       if (!user) {
-        if (!password) {
-          alert("Password is required.");
-          btn.innerHTML = originalText;
-          btn.disabled = false;
-          return;
-        }
+        if (!password) { alert('Password is required.'); if (actionBtn) { actionBtn.innerHTML = originalText; actionBtn.disabled = false; } return; }
         const credential = await createUserWithEmailAndPassword(auth, email, password);
         user = credential.user;
-      } 
-      // If logged in via Google but creating profile
-      else {
-        if (password) {
-            try { await updatePassword(user, password); } catch(e) { console.log("Pass update skipped/failed"); }
+      } else {
+        // If user is signed-in with Google and wants to add a password, link it properly
+        const providers = user.providerData.map(p => p.providerId);
+        if (providers.includes('google.com') && password) {
+          const emailCred = EmailAuthProvider.credential(email, password);
+          await linkWithCredential(user, emailCred);
         }
       }
 
-      // Create User Document
       await setDoc(doc(db, "users", user.uid), {
         name: fullName,
         college: college,
@@ -695,90 +737,42 @@ body.auth-active .menu-btn span { background: #ffffff; }
 
     } catch (error) {
       console.error("Registration error:", error);
-      alert("Error: " + error.message);
-      btn.innerHTML = originalText;
-      btn.disabled = false;
+      alert("Error: " + (error.message || error));
+      if (actionBtn) { actionBtn.innerHTML = originalText; actionBtn.disabled = false; }
     }
   }
 
-  // --- 5. CHECK USER PROFILE ---
-  async function checkUserProfile(user) {
-    try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists() && userSnap.data().profileComplete === true) {
-            window.location.replace("index.html");
-            return;
-        } 
-        
-        // Force Registration View
-        document.getElementById('landing-view').style.display = 'none';
-        document.getElementById('auth-wrapper').classList.add('active-view');
-        document.body.classList.add('auth-active');
-        document.getElementById('getStartedBtnArea').classList.add('hide-btn');
-
-        document.getElementById('view-login').style.display = 'none';
-        const regView = document.getElementById('view-registration');
-        regView.classList.remove('hidden');
-        regView.style.display = 'flex';
-        
-        document.getElementById('regEmailInput').value = user.email;
-        if (user.displayName) {
-             document.getElementById('regFullName').value = user.displayName;
-        }
-
-    } catch (err) {
-        console.error("Profile check error:", err);
-    }
-  }
-
-  // --- 6. PASSWORD RESET LOGIC (Refined) ---
+  // --- 5. PASSWORD RESET LOGIC ---
   async function sendResetLink() {
-    // Get email from DOM and clean it
-    const emailRaw = document.getElementById('forgotEmailDisplay').innerText;
+    const emailRaw = forgotEmailDisplay.innerText;
     const email = emailRaw ? emailRaw.trim() : "";
 
-    if(!email) {
-        alert("No email address found.");
-        return;
-    }
+    if(!email) { alert('No email address found.'); return; }
 
     const btn = document.getElementById('btnSendReset');
-    btn.innerText = "Sending...";
-    btn.disabled = true;
+    btn.innerText = 'Sending...'; btn.disabled = true;
 
     try {
-      // Configuration object (optional, can be null)
-      const actionCodeSettings = {
-        url: window.location.href, // Returns user here after reset
-      };
-      
+      const actionCodeSettings = { url: window.location.href };
       await sendPasswordResetEmail(auth, email, actionCodeSettings);
-      
-      // Update UI on success
-      console.log("Reset email sent to:", email);
       document.getElementById('sentEmailSpan').textContent = email;
-      document.getElementById('forgotStateInitial').classList.add('hidden');
-      document.getElementById('forgotStateSuccess').classList.remove('hidden');
-
+      forgotStateInitial.classList.add('hidden');
+      forgotStateSuccess.classList.remove('hidden');
     } catch (error) {
-        console.error("Reset Error:", error);
-        if (error.code === 'auth/user-not-found') {
-            // Security: Don't reveal user doesn't exist, just show success or generic message
-            alert("If that email is registered, we have sent a link.");
-        } else {
-            alert("Error: " + error.message);
-        }
-        btn.innerText = "Send Link";
-        btn.disabled = false;
+      console.error('Reset Error:', error);
+      if (error.code === 'auth/user-not-found') {
+        alert('If that email is registered, we have sent a link.');
+      } else {
+        alert('Error: ' + (error.message || error));
+      }
+      btn.innerText = 'Send Link'; btn.disabled = false;
     }
   }
 
 </script>
 
 <script>
-/* ================= UI INTERACTION SCRIPTS ================= */
+/* ================= UI INTERACTION SCRIPTS (UNCHANGED) ================= */
 const baseLabels = ["Track  attendance", "Get  detailed  stats", "Subjects  analytics", "Plan  safebunks", "Tips  &  roadmap", "Ask  doubts  to  AI", "Log  short  notes", "Realtime  counts", "View  edit  anytime", "College  friendly"];
 const labels = Array.from({ length: 20 }, () => baseLabels).flat();
 const list = document.getElementById("list");
@@ -806,7 +800,6 @@ function render() {
 
 function step() {
   if (index >= labels.length - 2) { 
-      // Reset animation smoothly if needed, or just stop
       clearInterval(timer); 
       return; 
   }
