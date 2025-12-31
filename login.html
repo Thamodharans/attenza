@@ -555,6 +555,12 @@ body.auth-active .menu-btn span { background: #ffffff; }
 
   // --- AUTH STATE OBSERVER ---
   onAuthStateChanged(auth, async (user) => {
+    // CRITICAL FIX: If we are in the middle of a link operation (pendingCredential exists),
+    // DO NOT Redirect yet. Wait for handleEmailLogin to finish the link and manually redirect.
+    if (pendingCredential) {
+        return; 
+    }
+
     if (user) {
       try {
         const userRef = doc(db, "users", user.uid);
@@ -579,8 +585,6 @@ body.auth-active .menu-btn span { background: #ffffff; }
       } catch (err) {
         console.error("Profile check error:", err);
       }
-    } else {
-        pendingCredential = null;
     }
   });
 
@@ -678,20 +682,36 @@ body.auth-active .menu-btn span { background: #ffffff; }
 
     try {
       // 1. Sign in with Email/Password
+      // This will Trigger onAuthStateChanged BUT we block it because pendingCredential is set
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
       // 2. IF PENDING GOOGLE CREDENTIAL EXISTS -> LINK IT NOW
       if (pendingCredential) {
           try {
+              // Wait for the link to complete
               await linkWithCredential(userCredential.user, pendingCredential);
               console.log("SUCCESS: Google account linked.");
               alert("Google account successfully linked! You can now use Google login.");
           } catch(linkErr) {
               console.error("Linking failed:", linkErr);
+              // Fallback: If linking fails, user is still logged in via password, which is fine
           }
+          // Clear Pending so Redirect can happen
+          pendingCredential = null;
       }
 
-      // Success -> Redirect handled by onAuthStateChanged
+      // 3. Manual Check/Redirect since we blocked the observer
+      if(userCredential.user) {
+          // Check profile status manually or just reload
+           const userRef = doc(db, "users", userCredential.user.uid);
+           const userSnap = await getDoc(userRef);
+           if (userSnap.exists() && userSnap.data().profileComplete === true) {
+                window.location.replace("index.html");
+           } else {
+               // Should be handled by observer next time or we are already in reg flow
+               window.location.reload();
+           }
+      }
 
     } catch (error) {
       console.error("Login error:", error);
