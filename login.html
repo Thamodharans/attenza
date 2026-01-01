@@ -499,31 +499,40 @@ body.auth-active .menu-btn span { background: #ffffff; }
 </div> 
 
 <script type="module">
+/* ====================== FIREBASE & AUTH LOGIC (robust Option B) ====================== */
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { 
     getAuth, 
     GoogleAuthProvider, 
     signInWithPopup, 
-    fetchSignInMethodsForEmail, 
-    signInWithEmailAndPassword, 
+    signInWithEmailAndPassword,
+    fetchSignInMethodsForEmail,
     createUserWithEmailAndPassword,
     onAuthStateChanged,
     sendPasswordResetEmail,
     EmailAuthProvider,
-    linkWithCredential,
     linkWithPopup,
-    signOut,
+    linkWithRedirect,
+    getRedirectResult,
+    unlink,
+    signOut
   } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
   import { 
-    getFirestore, 
-    doc, 
-    getDoc, 
-    setDoc, 
-    serverTimestamp 
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    serverTimestamp,
+    query,
+    collection,
+    where,
+    getDocs,
+    limit
   } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 
-  // --- FIREBASE CONFIGURATION ---
+  // --- FIREBASE CONFIGURATION (unchanged) ---
   const firebaseConfig = {
     apiKey: "AIzaSyBjimAKxtrdKBufP5Rw_gUi4BJZRF6AGrs",
     authDomain: "attenza-21fc2.firebaseapp.com",
@@ -533,7 +542,6 @@ body.auth-active .menu-btn span { background: #ffffff; }
     appId: "1:363087900006:web:5072149dc1219b447e2ca7"
   };
 
-  // Initialize Services
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -546,35 +554,83 @@ body.auth-active .menu-btn span { background: #ffffff; }
   const passwordContainer = document.getElementById('passwordContainer');
   const continueBtn = document.getElementById('continueBtn');
   const loginPassword = document.getElementById('loginPassword');
-  
-  // Pending Credential for the "Ask Password Once" flow
-  let pendingGoogleCredential = null;
 
-  // expose some functions for inline handlers
-  window.checkEmailAndProceed = checkEmailAndProceed;
+  // Flow flags & pending states
+  let wantToLinkGoogleAfterPassword = false; // set when we block Google popup and wait for password entry
+  let waitingForRedirectResult = false; // set when we called linkWithRedirect and are waiting for the redirect result
+  let lastCheckedEmail = ""; // for UX and safety
+
+  // expose inline handlers
+  window.handleGoogleLogin = handleGoogleLogin;
   window.handleEmailLogin = handleEmailLogin;
+  window.checkEmailAndProceed = checkEmailAndProceed;
   window.completeRegistration = completeRegistration;
   window.sendResetLink = sendResetLink;
   window.signOutUser = () => signOut(auth);
 
-  // --- AUTH STATE OBSERVER ---
+  // Immediately check redirect result (in case linkWithRedirect was used previously)
+  (async function handleRedirectResultOnLoad(){
+    try {
+      const result = await getRedirectResult(auth);
+      if (result && result.user) {
+        console.log("Redirect result available after linking redirect:", result);
+        await finalizeLinkingAfterRedirect(result);
+      }
+    } catch (err) {
+      console.warn("getRedirectResult error (likely no redirect result):", err);
+    }
+  })();
+
+  // --- AUTH STATE OBSERVER (defensive) ---
   onAuthStateChanged(auth, async (user) => {
-    // If we have a pending google credential waiting to be linked, do not auto-redirect.
-    // Wait for the password verification step or user action to link.
-    if (pendingGoogleCredential) {
-        return; 
+    // If we are in the middle of a linking redirect (waiting), don't auto-redirect.
+    if (waitingForRedirectResult) {
+      console.log("Waiting for redirect result — hold redirect.");
+      return;
+    }
+    // If we blocked Google and are waiting for the user to enter password, hold redirect.
+    if (wantToLinkGoogleAfterPassword) {
+      console.log("Waiting for password verification before linking Google — hold redirect.");
+      return;
     }
 
     if (user) {
       try {
+        // Defensive consistency check: ensure Firestore does not have a different UID for same email.
+        const uEmail = user.email;
+        if (uEmail) {
+          try {
+            const q = query(collection(db, "users"), where("email", "==", uEmail), limit(1));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+              const docSnap = snap.docs[0];
+              if (docSnap.id !== user.uid) {
+                // Conflict: Firestore maps this email to a different UID. We must not auto-redirect.
+                console.warn("Auth/Firestore UID mismatch detected for email:", uEmail, "existing uid:", docSnap.id, "current uid:", user.uid);
+                // Sign out to avoid landing in inconsistent state.
+                await signOut(auth);
+                alert("We detected an account conflict for this email. To protect your data please sign in using email & password and then link Google from Profile.");
+                return;
+              }
+            }
+          } catch (dbErr) {
+            console.error("Error checking Firestore consistency:", dbErr);
+            // Conservative approach: sign out to avoid inconsistent state.
+            try { await signOut(auth); } catch(e){/**/}
+            alert("Network error verifying account state. Please try again.");
+            return;
+          }
+        }
+
+        // If profile complete -> go to index
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists() && userSnap.data().profileComplete === true) {
-            // Redirect to dashboard/home
             window.location.replace("index.html");
             return;
         } 
-        // Force Registration View for incomplete profile
+
+        // Otherwise show the registration view (your existing behavior)
         document.getElementById('landing-view').style.display = 'none';
         document.getElementById('auth-wrapper').classList.add('active-view');
         document.body.classList.add('auth-active');
@@ -584,8 +640,7 @@ body.auth-active .menu-btn span { background: #ffffff; }
         const regView = document.getElementById('view-registration');
         regView.classList.remove('hidden');
         regView.style.display = 'flex';
-        
-        // Populate inputs if coming from Google login initially
+
         if (!document.getElementById('regEmailInput').value && user.email) {
             document.getElementById('regEmailInput').value = user.email;
         }
@@ -598,158 +653,271 @@ body.auth-active .menu-btn span { background: #ffffff; }
     }
   });
 
-  // --- GOOGLE LOGIN (Robust: Catch conflicts and require password link) ---
+  /* =========================
+     PRIMARY FLOW FUNCTIONS
+     ========================= */
+
+  // 1) Google button handler (pre-check before any popup)
   async function handleGoogleLogin() {
-    try {
-      await signInWithPopup(auth, googleProvider);
-      // Success: onAuthStateChanged will handle next steps (profile check/redirect)
-    } catch (error) {
-      console.error("Google login error:", error);
-
-      // LOGIC: If account exists with password -> Ask for password once and link.
-      if (error.code === 'auth/account-exists-with-different-credential') {
-        
-        // 1. Save the Google Credential to link later
-        try {
-          pendingGoogleCredential = GoogleAuthProvider.credentialFromError(error);
-        } catch (e) {
-          // fallback for older error shapes
-          pendingGoogleCredential = null;
-        }
-
-        const existingEmail = error.customData?.email || error.email;
-
-        // 2. UI Update: Show Password Field automatically
-        if (existingEmail) {
-            emailInput.value = existingEmail;
-            emailInput.disabled = true; // Lock email
-            
-            emailIconStatic.classList.add('hidden');
-            emailArrowBtn.classList.add('hidden');
-            passwordContainer.classList.remove('hidden');
-            continueBtn.classList.remove('hidden');
-            
-            continueBtn.textContent = "Verify & Link Account";
-            
-            // Gentle UX message (use toast in future)
-            alert("An account already exists with this email. Please enter your password once to link your Google account.");
-            loginPassword.focus();
-            return;
-        }
-      } else {
-        // Generic error or popup blocked
-        // Provide helpful message; do not auto-redirect
-        if (error.code === 'auth/popup-closed-by-user') {
-          // user closed popup — silent
-          console.warn("Google popup closed by user.");
-        } else if (error.code === 'auth/popup-blocked') {
-          alert("Popup blocked. Please allow popups or try signing in from another device.");
-        } else {
-          alert("Sign in failed. Please try again.");
-        }
-      }
+    // get email from input or prompt once (we keep your UI; prompt only if user didn't type it)
+    let email = (emailInput && emailInput.value && emailInput.value.trim()) || "";
+    if (!email) {
+      email = prompt("Enter the email you want to sign in with (we'll check it before opening Google).");
+      if (!email) return;
+      email = email.trim();
+      emailInput.value = email;
     }
-  }
-  window.handleGoogleLogin = handleGoogleLogin;
+    lastCheckedEmail = email;
 
-  // --- CHECK EMAIL LOGIC ---
-  async function checkEmailAndProceed() {
-    const emailValue = emailInput.value.trim();
-    if (!emailValue) return;
-
-    const arrowBtn = emailArrowBtn;
-    const originalContent = arrowBtn.innerHTML;
-    arrowBtn.innerHTML = '<div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>';
-    arrowBtn.disabled = true;
-
+    // fetch methods for this email
+    let methods = [];
     try {
-      let methods = [];
-      try {
-        methods = await fetchSignInMethodsForEmail(auth, emailValue);
-      } catch (err) {
-        console.warn("fetchSignInMethodsForEmail error:", err);
+      methods = await fetchSignInMethodsForEmail(auth, email);
+      console.log("fetchSignInMethodsForEmail:", email, methods);
+    } catch (err) {
+      console.warn("fetchSignInMethodsForEmail error:", err);
+      alert("Network error while verifying account. Try again or sign in with email/password.");
+      return;
+    }
+
+    const hasPassword = methods.includes('password');
+    const hasGoogle = methods.includes('google.com');
+
+    // OPTION B protection: if password exists and google not linked, block popup
+    if (hasPassword && !hasGoogle) {
+      wantToLinkGoogleAfterPassword = true;
+      // Prefill and lock email input
+      emailInput.value = email;
+      emailInput.disabled = true;
+      emailIconStatic.classList.add('hidden');
+      emailArrowBtn.classList.add('hidden');
+
+      // Show password UI
+      passwordContainer.classList.remove('hidden');
+      continueBtn.classList.remove('hidden');
+      continueBtn.textContent = "Verify & Link Google";
+      loginPassword.focus();
+
+      // Friendly guidance
+      alert("We found an existing account for this email. Enter your password once to securely link Google to it.");
+      return;
+    }
+
+    // If no password provider (new account) OR google already linked -> allow normal Google popup sign-in
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log("signInWithPopup result:", result);
+
+      // Defensive: check Firestore for UID collision (rare, but we protect)
+      const gEmail = result?.user?.email;
+      const gUid = result?.user?.uid;
+      if (gEmail) {
+        try {
+          const q = query(collection(db, "users"), where("email", "==", gEmail), limit(1));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const docSnap = snap.docs[0];
+            const existingUid = docSnap.id;
+            if (existingUid !== gUid) {
+              // Conflict discovered — sign out and require password flow
+              console.warn("Post-Google sign-in found Firestore doc for same email but different uid.", existingUid, gUid);
+              // Sign out the Google session to avoid landing in inconsistent state
+              await signOut(auth);
+              // Now require the password flow to link
+              wantToLinkGoogleAfterPassword = true;
+              emailInput.value = gEmail;
+              emailInput.disabled = true;
+              emailIconStatic.classList.add('hidden');
+              emailArrowBtn.classList.add('hidden');
+              passwordContainer.classList.remove('hidden');
+              continueBtn.classList.remove('hidden');
+              continueBtn.textContent = "Verify & Link Google";
+              alert("We found an existing account for this email. Enter your password once to securely link Google to it.");
+              return;
+            }
+          }
+        } catch (dbErr) {
+          console.error("Firestore check after Google sign-in failed:", dbErr);
+          // sign out to avoid wrong state
+          try { await signOut(auth); } catch(e){/**/}
+          alert("Network error verifying account. Please try again.");
+          return;
+        }
       }
 
-      if (methods.length === 0) {
-        // New user -> Registration
-        document.getElementById('regEmailInput').value = emailValue;
-        document.getElementById('view-login').style.display = 'none';
-        document.getElementById('view-registration').classList.remove('hidden');
-        document.getElementById('view-registration').style.display = 'flex';
+      // Normal path: signInWithPopup succeeded and no UID conflict detected. onAuthStateChanged will continue the flow.
+      return;
+
+    } catch (error) {
+      console.error("signInWithPopup error:", error);
+
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+        alert("Popup blocked/closed. If you want to link Google to an existing password account, enter your password below and we'll prompt Google after that.");
         return;
       }
 
-      // Existing User -> Show Password
-      emailIconStatic.classList.add('hidden');
-      emailArrowBtn.classList.add('hidden');
-      passwordContainer.classList.remove('hidden');
-      continueBtn.classList.remove('hidden');
-      loginPassword.focus();
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        // Fallback if pre-check missed something
+        try {
+          // Extract pending credential if present - we won't use it directly in this Option B flow,
+          // but we ask the user to authenticate with password and then link with popup.
+          console.warn("account-exists-with-different-credential returned even after pre-check. Handling by asking password.");
+        } catch(e){/**/}
 
-    } catch (error) {
-      console.error("Check email error:", error);
-      alert("Something went wrong. Please check your internet.");
-    } finally {
-      arrowBtn.innerHTML = originalContent;
-      arrowBtn.disabled = false;
+        const existingEmail = error.customData?.email || lastCheckedEmail || "";
+        if (existingEmail) {
+          wantToLinkGoogleAfterPassword = true;
+          emailInput.value = existingEmail;
+          emailInput.disabled = true;
+          emailIconStatic.classList.add('hidden');
+          emailArrowBtn.classList.add('hidden');
+          passwordContainer.classList.remove('hidden');
+          continueBtn.classList.remove('hidden');
+          continueBtn.textContent = "Verify & Link Google";
+          alert("An account already exists with this email. Enter your password once to link your Google account.");
+          loginPassword.focus();
+          return;
+        }
+      }
+
+      alert("Google sign-in failed. Please try again.");
+      return;
     }
   }
 
-  // --- EMAIL LOGIN (HANDLES LINKING) ---
+  // 2) After user enters password (or uses email-first login). Sign in and, if requested, link Google.
   async function handleEmailLogin() {
-    const email = emailInput.value.trim();
+    const email = (emailInput && emailInput.value && emailInput.value.trim()) || "";
     const password = loginPassword.value;
 
     if (!password) { alert("Please enter password"); return; }
 
     const btn = continueBtn;
-    const prevText = btn.textContent;
+    const prevText = btn.textContent || "Continue";
     btn.textContent = "Verifying...";
     btn.disabled = true;
 
     try {
-      // 1. Sign in with Email/Password
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      // 2. IF PENDING GOOGLE CREDENTIAL EXISTS -> LINK IT NOW
-      if (pendingGoogleCredential) {
-          try {
-              // Link the Google credential to the currently signed-in user
-              await linkWithCredential(userCredential.user, pendingGoogleCredential);
-              pendingGoogleCredential = null;
-              console.log("SUCCESS: Google account linked.");
-              alert("Google account successfully linked! You can now use Google login.");
-          } catch(linkErr) {
-              console.error("Linking failed:", linkErr);
-              // Keep account; do not delete. Let user try linking from settings later.
-              alert("Linking failed. You can link Google later from profile settings.");
+      console.log("Signed in with password:", userCredential.user.uid);
+
+      // If we previously blocked Google and want to link now -> try linkWithPopup
+      if (wantToLinkGoogleAfterPassword) {
+        wantToLinkGoogleAfterPassword = false;
+
+        // Attempt popup linking first
+        try {
+          const linkResult = await linkWithPopup(userCredential.user, googleProvider);
+          console.log("linkWithPopup result:", linkResult);
+
+          // Verify that linked google provider email matches the signed-in email
+          const googleProviderData = (linkResult.user && linkResult.user.providerData) || [];
+          const googleEntry = googleProviderData.find(p => p.providerId === 'google.com');
+          if (!googleEntry) {
+            alert("Google linking did not complete. Please try again or link from Profile.");
+          } else if (googleEntry.email && googleEntry.email.toLowerCase() !== email.toLowerCase()) {
+            // Wrong Google account chosen — unlink and inform user
+            try {
+              await unlink(linkResult.user, 'google.com');
+            } catch (unlinkErr) {
+              console.warn("unlink failed (non-fatal):", unlinkErr);
+            }
+            alert("You selected a different Google account. Please select the Google account that matches your email.");
+            return;
+          } else {
+            alert("Google successfully linked. You can now sign in with Google or email/password.");
           }
+        } catch (popupErr) {
+          console.warn("linkWithPopup failed:", popupErr);
+          // If popup blocked or closed, fallback to redirect flow
+          if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user') {
+            try {
+              waitingForRedirectResult = true;
+              await linkWithRedirect(userCredential.user, googleProvider);
+              // After this call the browser will navigate away. getRedirectResult() will run on load to finalize.
+              return; // don't proceed to redirect now; wait for redirect return
+            } catch (redirErr) {
+              console.error("linkWithRedirect failed:", redirErr);
+              alert("Could not open Google for linking. Try again or link from Profile settings.");
+            }
+          } else {
+            console.error("Unexpected linking error:", popupErr);
+            alert("Could not link Google now. You can link later from Profile > Link Google.");
+          }
+        }
       }
 
-      // 3. Manual Check/Redirect (Safe guard)
-      if(userCredential.user) {
-           const userRef = doc(db, "users", userCredential.user.uid);
-           const userSnap = await getDoc(userRef);
-           if (userSnap.exists() && userSnap.data().profileComplete === true) {
-                window.location.replace("index.html");
-           } else {
-               window.location.reload();
-           }
+      // After sign-in (and possible linking attempt) go to profile/redirect
+      const userRef = doc(db, "users", userCredential.user.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists() && userSnap.data().profileComplete === true) {
+        window.location.replace("index.html");
+      } else {
+        window.location.reload();
       }
 
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("handleEmailLogin error:", error);
       if (error.code === "auth/wrong-password") {
-          alert("Incorrect password.");
+        alert("Incorrect password.");
+      } else if (error.code === "auth/user-not-found") {
+        alert("No account found for this email. Please register first.");
       } else {
-          alert("Login failed. Please check credentials.");
+        alert("Login failed. Please check your credentials or internet connection.");
       }
+    } finally {
       btn.textContent = prevText;
       btn.disabled = false;
     }
   }
 
-  // --- REGISTRATION (NO forced Google linking) ---
+  // Called after getRedirectResult() returns a result from linkWithRedirect
+  async function finalizeLinkingAfterRedirect(result) {
+    waitingForRedirectResult = false;
+    try {
+      if (!result || !result.user) {
+        console.warn("No redirect result user present.");
+        return;
+      }
+      // verify google provider email matches currently signed-in user's email
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        console.warn("No currentUser after redirect.");
+        return;
+      }
+
+      const googleEntry = (result.user.providerData || []).find(p => p.providerId === 'google.com');
+      if (!googleEntry) {
+        alert("Google linking did not complete. Please try again.");
+        return;
+      }
+
+      if (googleEntry.email && currentUser.email && googleEntry.email.toLowerCase() !== currentUser.email.toLowerCase()) {
+        // Wrong Google account chosen — unlink and inform user
+        try {
+          await unlink(currentUser, 'google.com');
+        } catch (unlinkErr) {
+          console.warn("unlink after redirect failed:", unlinkErr);
+        }
+        alert("You selected a different Google account during linking. Please try again and choose the Google account that matches your email.");
+        return;
+      }
+
+      // Success
+      alert("Google successfully linked. You can now sign in with Google or email/password.");
+      // Refresh or redirect as usual; onAuthStateChanged will handle profile check normally.
+      window.location.replace("index.html");
+
+    } catch (err) {
+      console.error("finalizeLinkingAfterRedirect error:", err);
+      alert("There was a problem completing Google linking. Please try again.");
+    }
+  }
+
+  /* =========================
+     Registration & Reset
+     ========================= */
+
   async function completeRegistration() {
     const fullName = document.getElementById('regFullName').value.trim();
     const college = document.getElementById('regCollege').value;
@@ -773,7 +941,7 @@ body.auth-active .menu-btn span { background: #ffffff; }
     try {
       let user = auth.currentUser;
 
-      // Scenario: New Email/Password User -> Create account (do NOT force Google link)
+      // Create base account if not signed in (email/password)
       if (!user) {
         if (!password) {
           alert("Password is required.");
@@ -781,24 +949,19 @@ body.auth-active .menu-btn span { background: #ffffff; }
           return;
         }
 
-        // 1. Create Base Account
         const credential = await createUserWithEmailAndPassword(auth, email, password);
         user = credential.user;
-
-        // 2. DO NOT force Google linking here. It's optional. Save profile now.
-        // Show optional note
-        note.classList.remove('hidden');
-      } 
-      // Scenario: Already signed in via Google, optionally allow adding password to link
-      else if (password) {
-         try {
-            const credential = EmailAuthProvider.credential(user.email, password);
-            // Attempt to link password credential to signed-in user
-            await linkWithCredential(user, credential);
-        } catch(e) { console.log("Password linking skipped or failed (already linked?):", e); }
+        note.classList.remove('hidden'); // optional: show verify note
+      } else if (password) {
+        // If user is already signed in (e.g., via Google), optionally attempt to link a password credential
+        try {
+          const passCred = EmailAuthProvider.credential(user.email, password);
+          // Attempt to link; ignore if already linked
+          try { await linkWithPopup(user, passCred); } catch(e){ /* ignore; not critical */ }
+        } catch(e){ /* ignore */ }
       }
 
-      // 3. Save Profile Data
+      // Save Profile Data
       await setDoc(doc(db, "users", user.uid), {
         name: fullName,
         college: college,
@@ -819,7 +982,7 @@ body.auth-active .menu-btn span { background: #ffffff; }
     }
   }
 
-  // --- PASSWORD RESET (Brevo SMTP Optimized) ---
+  // Password reset
   async function sendResetLink() {
     const emailRaw = document.getElementById('forgotEmailDisplay').innerText;
     const email = emailRaw ? emailRaw.trim() : "";
@@ -837,8 +1000,6 @@ body.auth-active .menu-btn span { background: #ffffff; }
 
     try {
       const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
-      
-      // Calls Firebase -> Custom SMTP (Brevo)
       await sendPasswordResetEmail(auth, email, actionCodeSettings);
 
       document.getElementById('sentEmailSpan').textContent = email;
@@ -848,7 +1009,6 @@ body.auth-active .menu-btn span { background: #ffffff; }
     } catch (error) {
         console.error("Reset Error:", error);
         
-        // UX: If user not found, don't reveal it (security), just pretend success
         if (error.code === 'auth/user-not-found') {
              document.getElementById('sentEmailSpan').textContent = email;
              document.getElementById('forgotStateInitial').classList.add('hidden');
@@ -860,10 +1020,11 @@ body.auth-active .menu-btn span { background: #ffffff; }
         }
     }
   }
+
 </script>
 
 <script>
-/* ================= UI INTERACTION SCRIPTS ================= */
+/* ================= UI INTERACTION SCRIPTS (unchanged UI) ================= */
 const baseLabels = ["Track  attendance", "Get  detailed  stats", "Subjects  analytics", "Plan  safebunks", "Tips  &  roadmap", "Ask  doubts  to  AI", "Log  short  notes", "Realtime  counts", "View  edit  anytime", "College  friendly"];
 const labels = Array.from({ length: 20 }, () => baseLabels).flat();
 const list = document.getElementById("list");
