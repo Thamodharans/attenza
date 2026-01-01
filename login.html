@@ -599,8 +599,11 @@ body.auth-active .menu-btn span { background: #ffffff; }
         document.getElementById('view-login').style.display = 'none';
 
         // Check if email is verified
-        if (user.emailVerified) {
-             // FORCE REGISTRATION SCREEN (User is Google or Verified Email)
+        const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
+
+        // IF VERIFIED OR IF GOOGLE USER (Trust them)
+        if (user.emailVerified || isGoogleUser) {
+             // FORCE REGISTRATION SCREEN
              showRegistrationScreen(user);
         } else {
              // Show Verify Screen (User is Unverified Email)
@@ -707,14 +710,20 @@ body.auth-active .menu-btn span { background: #ffffff; }
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // Check for verification
-      if (!userCredential.user.emailVerified) {
+      const user = userCredential.user;
+      
+      // LOGIC FIX: Check provider. If Google linked, bypass verification check.
+      const isGoogleLinked = user.providerData.some(p => p.providerId === 'google.com');
+
+      if (!user.emailVerified && !isGoogleLinked) {
           alert("Please verify your email first.");
           await signOut(auth);
           btn.textContent = "Continue";
           btn.disabled = false;
           return;
       }
+      // Success will trigger onAuthStateChanged
+      
     } catch (error) {
       console.error("Login error:", error);
       alert("Invalid email or password.");
@@ -779,20 +788,21 @@ body.auth-active .menu-btn span { background: #ffffff; }
         } 
         
         // ============================================
-        // CASE B: GOOGLE USER (Auth User exists & is VERIFIED)
+        // CASE B: GOOGLE USER (Auth User exists)
         // ============================================
-        else if (user.emailVerified) {
-             // 1. Link Password if provided (Optional for Google users)
+        // We trust them immediately, skipping verification email.
+        else {
+             // 1. Link Password if provided
              if (password) {
                  try {
                      const credential = EmailAuthProvider.credential(user.email, password);
                      await linkWithCredential(user, credential);
                  } catch(e) {
-                     console.log("Could not link password (maybe linked or weak)", e);
+                     console.log("Link error (maybe already linked):", e);
                  }
              }
 
-             // 2. Save Profile DIRECTLY (No Verification Email needed)
+             // 2. Save Profile DIRECTLY
              await saveUserProfile(user.uid, {
                 name: fullName, college, course_or_class: course, section, rollNumber: rollNo,
                 email: user.email, profileComplete: true, createdAt: serverTimestamp()
@@ -800,16 +810,6 @@ body.auth-active .menu-btn span { background: #ffffff; }
              
              // 3. Redirect
              window.location.replace("index.html");
-        }
-        
-        // ============================================
-        // CASE C: RARE EDGE CASE (Exists but not verified?)
-        // ============================================
-        else {
-             // Should not happen if flow is correct, but safer to treat as New User needing verification
-             await sendEmailVerification(user);
-             alert("Your email is not verified. Sending verification link...");
-             window.location.reload();
         }
 
     } catch (error) {
