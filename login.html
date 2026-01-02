@@ -529,8 +529,8 @@ body.auth-active .menu-btn span { background: #ffffff; }
     EmailAuthProvider,
     linkWithCredential,
     signOut,
-    sendEmailVerification,
-    deleteUser
+    sendEmailVerification 
+    // REMOVED deleteUser to prevent abusive activity bans
   } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
   import { 
     getFirestore, 
@@ -543,12 +543,12 @@ body.auth-active .menu-btn span { background: #ffffff; }
 
   // --- FIREBASE CONFIGURATION ---
   const firebaseConfig = {
-    apiKey: "AIzaSyDhBVH_TpMvFNqpeQ-8nLDyJON-7GbPBE4",
-    authDomain: "attendmark-b22a9.firebaseapp.com",
-    projectId: "attendmark-b22a9",
-    storageBucket: "attendmark-b22a9.firebasestorage.app",
-    messagingSenderId: "161774259392",
-    appId: "1:161774259392:web:60402e2cbce5296e21b125"
+    apiKey: "AIzaSyDbFEWKJylJJgNw0KIyFsDxlDKPwJII73o",
+    authDomain: "attenza-app.firebaseapp.com",
+    projectId: "attenza-app",
+    storageBucket: "attenza-app.firebasestorage.app",
+    messagingSenderId: "435010148378",
+    appId: "1:435010148378:web:e5540806fd0ef90b16d9a3"
   };
 
   // Initialize Services
@@ -559,7 +559,6 @@ body.auth-active .menu-btn span { background: #ffffff; }
 
   // Globals for Verification Polling
   let verificationInterval = null;
-  let pendingProfileData = null; 
 
   // DOM refs
   const emailInput = document.getElementById('emailInput');
@@ -578,46 +577,54 @@ body.auth-active .menu-btn span { background: #ffffff; }
   window.handleRegistrationCancel = handleRegistrationCancel;
   window.cancelVerification = cancelVerification;
 
-  // --- AUTH STATE OBSERVER ---
+  // --- GATEKEEPER LOGIC (onAuthStateChanged) ---
+  // This checks authentication state and directs traffic accordingly.
+  // It handles "limbo" users (incomplete profiles) without deleting them.
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-        
-        // 1. Fully Complete Profile -> Go Home
-        if (userSnap.exists() && userSnap.data().profileComplete === true) {
-            window.location.replace("index.html");
-            return;
-        } 
-        
-        // 2. Profile Missing (Incomplete Google or Unverified Email returning)
-        document.getElementById('landing-view').style.display = 'none';
-        document.getElementById('auth-wrapper').classList.add('active-view');
-        document.body.classList.add('auth-active');
-        document.getElementById('getStartedBtnArea').classList.add('hide-btn');
-        document.getElementById('view-login').style.display = 'none';
-
-        // Check if email is verified
+        // 1. Is the user valid? (Verified Email OR Google Provider)
         const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
+        const isVerified = user.emailVerified || isGoogleUser;
 
-        // IF VERIFIED OR IF GOOGLE USER (Trust them)
-        if (user.emailVerified || isGoogleUser) {
-             // FORCE REGISTRATION SCREEN
-             showRegistrationScreen(user);
-        } else {
-             // Show Verify Screen (User is Unverified Email)
+        if (!isVerified) {
+             // User exists but isn't verified. Force them to Verify Screen.
+             setupViewsForAuth();
              document.getElementById('verifyEmailDisplay').innerText = user.email;
              document.getElementById('view-verify-email').classList.remove('hidden');
              document.getElementById('view-verify-email').style.display = 'flex';
              startVerificationListener(user);
+             return;
         }
 
+        // 2. User is Valid. Do they have a profile?
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists() && userSnap.data().profileComplete === true) {
+            // SUCCESS: Profile Complete -> Go Home
+            window.location.replace("index.html");
+        } else {
+            // INCOMPLETE: Valid User but No Profile -> Force Registration Screen
+            setupViewsForAuth();
+            showRegistrationScreen(user);
+        }
       } catch (err) {
         console.error("Profile check error:", err);
       }
+    } else {
+        // No User -> Stay on Landing/Login
     }
   });
+
+  // Helper to hide landing and show Auth Wrapper
+  function setupViewsForAuth() {
+    document.getElementById('landing-view').style.display = 'none';
+    document.getElementById('auth-wrapper').classList.add('active-view');
+    document.body.classList.add('auth-active');
+    document.getElementById('getStartedBtnArea').classList.add('hide-btn');
+    document.getElementById('view-login').style.display = 'none';
+  }
 
   function showRegistrationScreen(user) {
     const regView = document.getElementById('view-registration');
@@ -627,8 +634,6 @@ body.auth-active .menu-btn span { background: #ffffff; }
     // Auto-fill knowns
     if (user.email) document.getElementById('regEmailInput').value = user.email;
     if (user.displayName) document.getElementById('regFullName').value = user.displayName;
-    
-    // Ensure password container is VISIBLE (so they can link password)
     document.getElementById('regPasswordContainer').style.display = 'block';
   }
 
@@ -636,23 +641,15 @@ body.auth-active .menu-btn span { background: #ffffff; }
   async function handleGoogleLogin() {
     try {
       await signInWithPopup(auth, googleProvider);
+      // onAuthStateChanged handles the rest
     } catch (error) {
       console.error("Google login error:", error);
-      alert("Sign in failed. Please try again.");
     }
   }
 
-  // --- CLEANUP: Handle "Back" from Registration ---
+  // --- SAFE CANCEL: Just Sign Out (No Delete) ---
   async function handleRegistrationCancel() {
-    const user = auth.currentUser;
-    if (user) {
-        try {
-            await deleteUser(user); 
-        } catch (e) {
-            console.error("Error deleting user:", e);
-            await signOut(auth);
-        }
-    }
+    await signOut(auth);
     backToLogin('view-registration'); 
   }
 
@@ -677,7 +674,6 @@ body.auth-active .menu-btn span { background: #ffffff; }
         document.getElementById('view-login').style.display = 'none';
         document.getElementById('view-registration').classList.remove('hidden');
         document.getElementById('view-registration').style.display = 'flex';
-        // Ensure password field is visible
         document.getElementById('regPasswordContainer').style.display = 'block';
         return;
       }
@@ -710,20 +706,7 @@ body.auth-active .menu-btn span { background: #ffffff; }
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      // LOGIC FIX: Check provider. If Google linked, bypass verification check.
-      const isGoogleLinked = user.providerData.some(p => p.providerId === 'google.com');
-
-      if (!user.emailVerified && !isGoogleLinked) {
-          alert("Please verify your email first.");
-          await signOut(auth);
-          btn.textContent = "Continue";
-          btn.disabled = false;
-          return;
-      }
-      // Success will trigger onAuthStateChanged
-      
+      // Logic handled in onAuthStateChanged
     } catch (error) {
       console.error("Login error:", error);
       alert("Invalid email or password.");
@@ -732,7 +715,7 @@ body.auth-active .menu-btn span { background: #ffffff; }
     }
   }
 
-  // --- REGISTRATION LOGIC START ---
+  // --- REGISTRATION LOGIC ---
   async function initiateRegistration() {
     // Gather Data
     const fullName = document.getElementById('regFullName').value.trim();
@@ -755,9 +738,7 @@ body.auth-active .menu-btn span { background: #ffffff; }
     try {
         let user = auth.currentUser;
 
-        // ============================================
         // CASE A: NEW USER (No Auth User exists yet)
-        // ============================================
         if (!user) {
             if (!password) { alert("Password required."); btn.innerHTML=originalText; btn.disabled=false; return; }
             
@@ -765,16 +746,16 @@ body.auth-active .menu-btn span { background: #ffffff; }
             const credential = await createUserWithEmailAndPassword(auth, email, password);
             user = credential.user;
 
-            // 2. Store data temporarily 
-            pendingProfileData = {
+            // 2. Save Profile (Even if unverified, we save data. Gatekeeper blocks access)
+            await saveUserProfile(user.uid, {
                 name: fullName, college, course_or_class: course, section, rollNumber: rollNo,
                 email: user.email, profileComplete: true, createdAt: serverTimestamp()
-            };
+            });
 
             // 3. Send Verification
             await sendEmailVerification(user);
 
-            // 4. Hide Reg, Show Verify View
+            // 4. Force UI update to Verify Screen (Gatekeeper would catch this on reload, but we do it instantly here)
             document.getElementById('view-registration').style.display = 'none';
             document.getElementById('view-registration').classList.add('hidden');
             
@@ -783,32 +764,26 @@ body.auth-active .menu-btn span { background: #ffffff; }
             verifyView.classList.remove('hidden');
             verifyView.style.display = 'flex';
 
-            // 5. Start Listener
             startVerificationListener(user);
         } 
         
-        // ============================================
-        // CASE B: GOOGLE USER (Auth User exists)
-        // ============================================
-        // We trust them immediately, skipping verification email.
+        // CASE B: EXISTING USER (Google or Partial)
         else {
              // 1. Link Password if provided
              if (password) {
                  try {
                      const credential = EmailAuthProvider.credential(user.email, password);
                      await linkWithCredential(user, credential);
-                 } catch(e) {
-                     console.log("Link error (maybe already linked):", e);
-                 }
+                 } catch(e) { console.log("Link skipped:", e); }
              }
 
-             // 2. Save Profile DIRECTLY
+             // 2. Save/Update Profile
              await saveUserProfile(user.uid, {
                 name: fullName, college, course_or_class: course, section, rollNumber: rollNo,
                 email: user.email, profileComplete: true, createdAt: serverTimestamp()
              });
              
-             // 3. Redirect
+             // 3. Redirect (Gatekeeper will approve this)
              window.location.replace("index.html");
         }
 
@@ -819,27 +794,26 @@ body.auth-active .menu-btn span { background: #ffffff; }
     }
   }
 
-  // --- LISTENER: Wait for Email Click ---
+  // --- LISTENER: Polling (Slowed down to 5s) ---
   function startVerificationListener(user) {
     if (verificationInterval) clearInterval(verificationInterval);
     
+    // Check every 5 seconds (Safety against abuse)
     verificationInterval = setInterval(async () => {
         try {
-            await user.reload(); // Refresh token
+            await user.reload(); 
             if (user.emailVerified) {
                 clearInterval(verificationInterval);
-                
-                if (pendingProfileData) {
-                    await saveUserProfile(user.uid, pendingProfileData);
-                } 
-                
-                alert("Email Verified! Setting up your dashboard...");
+                alert("Email Verified! Entering Dashboard...");
                 window.location.replace("index.html");
             }
         } catch(e) {
             console.log("Polling error", e);
         }
-    }, 3000); 
+    }, 5000); 
+
+    // Auto-stop polling after 5 minutes to save resources
+    setTimeout(() => { clearInterval(verificationInterval); }, 300000);
   }
 
   async function saveUserProfile(uid, data) {
@@ -848,8 +822,7 @@ body.auth-active .menu-btn span { background: #ffffff; }
 
   async function cancelVerification() {
       if (verificationInterval) clearInterval(verificationInterval);
-      const user = auth.currentUser;
-      if (user) await deleteUser(user); // Delete unverified account
+      await signOut(auth); // Sign out instead of Delete
       window.location.reload();
   }
 
@@ -871,7 +844,6 @@ body.auth-active .menu-btn span { background: #ffffff; }
     } catch (error) {
        console.error(error);
        if (error.code === 'auth/user-not-found') {
-          // Fake success for security
           document.getElementById('sentEmailSpan').textContent = email;
           document.getElementById('forgotStateInitial').classList.add('hidden');
           document.getElementById('forgotStateSuccess').classList.remove('hidden');
