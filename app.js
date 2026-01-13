@@ -860,3 +860,10 @@ function closeMenu() {
     menu.style.left = "-100%";
   }
 }
+
+// ==== LISTEN FROM MENU IFRAME ====
+window.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "CLOSE_MENU") {
+    closeMenu();
+  }
+});
