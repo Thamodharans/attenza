@@ -845,127 +845,159 @@ document.addEventListener("keydown", (e) => {
 initSelectors();
 renderMonth();
 
-// ===== MENU OPEN / CLOSE =====
-
-// find things on the page
-const menuView = document.getElementById('menuView');
-const openMenuBtn = document.getElementById('openMenuBtn');
-const closeMenuBtn = document.getElementById('closeMenuBtn');
-
-// open menu
-if (openMenuBtn) {
-  openMenuBtn.addEventListener('click', function () {
-    menuView.classList.remove('hidden', 'hide');
-    menuView.classList.add('show');
-    document.body.classList.add('no-scroll');
-  });
-}
-
-// close menu
-if (closeMenuBtn) {
-  closeMenuBtn.addEventListener('click', function () {
-    menuView.classList.remove('show');
-    menuView.classList.add('hide');
-    document.body.classList.remove('no-scroll');
-
-    setTimeout(function () {
-      menuView.classList.add('hidden');
-    }, 260);
-  });
-}
-
-// ===== SEARCH + OVERLAY + DROPDOWN LOGIC =====
-
-// elements used by the search/menu overlay
+/* ===========================
+   Menu script (original)
+   =========================== */
 const searchInput = document.getElementById('mainSearchInput');
 const searchBox = document.getElementById('searchBoxContainer');
 const actionBtn = document.getElementById('actionBtn');
-const scrollContent = document.getElementById('scrollContent'); // the content that will blur
+const scrollContent = document.getElementById('scrollContent'); // This gets blurred
 const overlayContainer = document.getElementById('result-overlay-container');
 
-// --- search input behavior ---
+// --- SEARCH INPUT LOGIC ---
 if (searchInput) {
   searchInput.addEventListener('focus', () => {
-    searchBox.classList.add('active');
+      searchBox.classList.add('active');
   });
 
   searchInput.addEventListener('blur', () => {
-    if (searchInput.value.length === 0) {
-      searchBox.classList.remove('active');
-    }
+      if (searchInput.value.length === 0) {
+          searchBox.classList.remove('active');
+      }
   });
 
   searchInput.addEventListener('input', (e) => {
-    // keep only numbers
-    const val = e.target.value.replace(/[^0-9]/g, '');
-    e.target.value = val;
+      // Strictly numeric
+      const val = e.target.value.replace(/[^0-9]/g, '');
+      e.target.value = val;
 
-    if (val.length > 0) {
-      actionBtn?.classList.add('visible');
-    } else {
-      actionBtn?.classList.remove('visible');
-    }
+      if (val.length > 0) {
+          actionBtn.classList.add('visible');
+      } else {
+          actionBtn.classList.remove('visible');
+      }
   });
 }
 
-// --- show overlay (when user taps the right arrow) ---
+// --- TRANSITION LOGIC ---
 function activateSearchMode() {
-  // blur the scroll area
-  scrollContent?.classList.add('content-blurred');
-
-  // show overlay container
-  if (overlayContainer) {
-    overlayContainer.style.display = 'flex';
-  }
-
-  // close mobile keyboard if open
-  searchInput?.blur();
+    // Blur just the content, not the header
+    if (scrollContent) scrollContent.classList.add('content-blurred');
+    
+    // Show Overlay
+    if (overlayContainer) overlayContainer.style.display = 'flex';
+    
+    // Dismiss keyboard
+    if (searchInput) searchInput.blur();
 }
 
-// --- hide overlay and reset search ---
 function exitSearchMode() {
-  scrollContent?.classList.remove('content-blurred');
-
-  if (overlayContainer) {
-    overlayContainer.style.display = 'none';
-  }
-
-  if (searchInput) {
-    searchInput.value = '';
-  }
-  actionBtn?.classList.remove('visible');
-  searchBox?.classList.remove('active');
+    // Unblur content
+    if (scrollContent) scrollContent.classList.remove('content-blurred');
+    
+    // Hide Overlay
+    if (overlayContainer) overlayContainer.style.display = 'none';
+    
+    // Cleanup inputs
+    if (searchInput) searchInput.value = '';
+    if (actionBtn) actionBtn.classList.remove('visible');
+    if (searchBox) searchBox.classList.remove('active');
 }
 
-// --- dropdown (class selector) ---
+// --- DROPDOWN LOGIC ---
 function toggleDropdown() {
-  const dd = document.getElementById('classDropdown');
-  dd?.classList.toggle('active');
+    const cd = document.getElementById('classDropdown');
+    if (cd) cd.classList.toggle('active');
 }
 
 function selectClass(className) {
-  const selectedText = document.getElementById('selectedClassText');
-  const foundState = document.getElementById('foundState');
-  const emptyState = document.getElementById('emptyState');
+    const sel = document.getElementById('selectedClassText');
+    const foundState = document.getElementById('foundState');
+    const emptyState = document.getElementById('emptyState');
+    const cd = document.getElementById('classDropdown');
+    if (sel) sel.textContent = className;
+    if (cd) cd.classList.remove('active');
 
-  if (selectedText) selectedText.textContent = className;
-  document.getElementById('classDropdown')?.classList.remove('active');
-
-  // fake logic: show found for B.Com Sem 5 else show empty
-  if (className === 'B.Com Sem 5') {
-    if (foundState) foundState.style.display = 'flex';
-    if (emptyState) emptyState.style.display = 'none';
-  } else {
-    if (foundState) foundState.style.display = 'none';
-    if (emptyState) emptyState.style.display = 'block';
-  }
+    if (className === 'B.Com Sem 5') {
+        if (foundState) foundState.style.display = 'flex';
+        if (emptyState) emptyState.style.display = 'none';
+    } else {
+        if (foundState) foundState.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
+    }
 }
 
-// click outside to close dropdown
-document.addEventListener('click', function (event) {
-  const dropdown = document.getElementById('classDropdown');
-  if (dropdown && !dropdown.contains(event.target) && !event.target.closest('.class-pill')) {
-    dropdown.classList.remove('active');
-  }
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('classDropdown');
+    if (dropdown && !dropdown.contains(event.target) && !event.target.closest('.class-pill')) {
+        dropdown.classList.remove('active');
+    }
 });
 
+/* ===========================
+   Menu open/close wiring (sliding handler)
+   - minimal, non-intrusive code added to wire the menu icon and close button.
+   - checks for element existence before using them.
+   =========================== */
+(function() {
+    const menuView = document.getElementById('view-menu'); // the menu page container integrated into index.html
+    const menuOpenBtn = document.querySelector('.icon-btn[aria-label="Menu"]'); // menu icon in header
+    const menuCloseBtn = menuView ? menuView.querySelector('.nav-btn') : null; // close button inside menu header
+
+    if (!menuView) return;
+
+    // ensure menu is initially hidden off-screen (non-destructive inline styles)
+    menuView.style.display = 'none';
+    menuView.style.transform = 'translateX(100%)';
+    menuView.style.transition = 'transform 0.35s ease, opacity 0.25s ease';
+    menuView.style.opacity = '1';
+
+    function openMenu() {
+        menuView.style.display = 'block';
+        // small delay to allow display to take effect before transform
+        requestAnimationFrame(() => {
+            menuView.style.transform = 'translateX(0)';
+        });
+        // optionally prevent background scroll while menu open
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeMenu() {
+        menuView.style.transform = 'translateX(100%)';
+        // restore after transition
+        setTimeout(() => {
+            menuView.style.display = 'none';
+            document.body.style.overflow = '';
+        }, 360);
+    }
+
+    if (menuOpenBtn) {
+        menuOpenBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openMenu();
+        });
+    }
+
+    if (menuCloseBtn) {
+        // remove inline onclick alert behavior if present (the original had an onclick="alert('Close Menu action')")
+        menuCloseBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeMenu();
+        });
+    }
+
+    // Close menu when tapping outside of menu content (optional safety)
+    document.addEventListener('click', (e) => {
+        if (!menuView || menuView.style.display === 'none') return;
+        const isInside = menuView.contains(e.target) || (menuOpenBtn && menuOpenBtn.contains(e.target));
+        if (!isInside) {
+            closeMenu();
+        }
+    });
+
+    // Close menu with Escape key
+    document.addEventListener('keydown', (e) => {
+        if (!menuView || menuView.style.display === 'none') return;
+        if (e.key === 'Escape') closeMenu();
+    });
+})();
