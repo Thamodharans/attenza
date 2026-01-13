@@ -513,7 +513,7 @@ const attendanceData = {
 
 const monthYearSelect = document.getElementById("monthYearSelect");
 const dateStrip = document.getElementById("dateStrip");
-const cardsContainer = document.getElementById("dateCardsContainer");
+const cardsContainer = document.getElementById("dateCardsContainer"); // Renamed ID
 const selectedDateLabel = document.getElementById("selectedDateLabel");
 
 const editModal = document.getElementById("editModal");
@@ -845,116 +845,153 @@ document.addEventListener("keydown", (e) => {
 initSelectors();
 renderMonth();
 
-// Menu integration
-const menuButton = document.querySelector('.icon-btn[aria-label="Menu"]');
-const menuView = document.getElementById('menu-view');
-const menuCloseButton = menuView.querySelector('.nav-btn[aria-label="Close Menu"]');
+/* ------------------ MENU / SEARCH / OVERLAY INTEGRATION ------------------ */
+/* Wrapped in an IIFE to avoid accidental variable collisions with existing code */
+(function () {
+    // --- Menu open/close wiring ---
+    const menuButton = document.querySelector('.icon-btn[aria-label="Menu"]'); // original header menu button
+    const viewMenu = document.getElementById('view-menu');
+    const menuCloseBtn = viewMenu ? viewMenu.querySelector('.nav-btn[aria-label="Close Menu"]') : null;
+    const bodyEl = document.body;
 
-// Initially hide menu
-menuView.style.transform = 'translateX(-100%)';
-menuView.style.transition = 'transform 0.3s ease-in-out';
-
-menuButton.addEventListener('click', () => {
-    menuView.style.transform = 'translateX(0)';
-});
-
-menuCloseButton.addEventListener('click', () => {
-    menuView.style.transform = 'translateX(-100%)';
-});
-
-// Menu search functionality
-const searchInput = document.getElementById('mainSearchInput');
-const searchBox = document.getElementById('searchBoxContainer');
-const actionBtn = document.getElementById('actionBtn');
-const scrollContent = document.getElementById('scrollContent'); // This gets blurred
-const overlayContainer = document.getElementById('result-overlay-container');
-const classDropdown = document.getElementById('classDropdown');
-const selectedClassText = document.getElementById('selectedClassText');
-const foundState = document.getElementById('foundState');
-const emptyState = document.getElementById('emptyState');
-const overlayBackdrop = overlayContainer.querySelector('.overlay-backdrop');
-
-// --- SEARCH INPUT LOGIC ---
-searchInput.addEventListener('focus', () => {
-    searchBox.classList.add('active');
-});
-
-searchInput.addEventListener('blur', () => {
-    if (searchInput.value.length === 0) {
-        searchBox.classList.remove('active');
+    function openMenu() {
+      if (!viewMenu) return;
+      viewMenu.style.display = 'flex';
+      bodyEl.classList.add('no-scroll');
+      // ensure menu scroll container at top
+      const sc = viewMenu.querySelector('.container-scroll');
+      if (sc) sc.scrollTop = 0;
+      // focus search input lightly (do not open keyboard on mobile automatically)
+      const search = document.getElementById('mainSearchInput');
+      if (search) search.blur();
     }
-});
 
-searchInput.addEventListener('input', (e) => {
-    // Strictly numeric
-    const val = e.target.value.replace(/[^0-9]/g, '');
-    e.target.value = val;
-
-    if (val.length > 0) {
-        actionBtn.classList.add('visible');
-    } else {
-        actionBtn.classList.remove('visible');
+    function closeMenu() {
+      if (!viewMenu) return;
+      viewMenu.style.display = 'none';
+      // hide result overlay if open
+      const overlay = document.getElementById('result-overlay-container');
+      if (overlay) overlay.style.display = 'none';
+      bodyEl.classList.remove('no-scroll');
+      // clear search UI
+      const searchBox = document.getElementById('searchBoxContainer');
+      if (searchBox) searchBox.classList.remove('active');
+      const input = document.getElementById('mainSearchInput');
+      if (input) input.value = '';
+      const actionBtn = document.getElementById('actionBtn');
+      if (actionBtn) actionBtn.classList.remove('visible');
     }
-});
 
-actionBtn.addEventListener('click', activateSearchMode);
+    if (menuButton) menuButton.addEventListener('click', openMenu);
+    if (menuCloseBtn) menuCloseBtn.addEventListener('click', closeMenu);
 
-overlayBackdrop.addEventListener('click', exitSearchMode);
-
-// --- TRANSITION LOGIC ---
-function activateSearchMode() {
-    // Blur just the content, not the header
-    scrollContent.classList.add('content-blurred');
-    
-    // Show Overlay
-    overlayContainer.style.display = 'flex';
-    
-    // Dismiss keyboard
-    searchInput.blur();
-}
-
-function exitSearchMode() {
-    // Unblur content
-    scrollContent.classList.remove('content-blurred');
-    
-    // Hide Overlay
-    overlayContainer.style.display = 'none';
-    
-    // Cleanup inputs
-    searchInput.value = '';
-    actionBtn.classList.remove('visible');
-    searchBox.classList.remove('active');
-}
-
-// --- DROPDOWN LOGIC ---
-classDropdown.querySelector('.class-pill').addEventListener('click', toggleDropdown);
-
-function toggleDropdown() {
-    classDropdown.classList.toggle('active');
-}
-
-const dropdownItems = classDropdown.querySelectorAll('.dropdown-item');
-dropdownItems.forEach(item => {
-    item.addEventListener('click', () => {
-        selectClass(item.textContent);
+    // close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && viewMenu && viewMenu.style.display === 'flex') {
+        closeMenu();
+      }
     });
-});
 
-function selectClass(className) {
-    selectedClassText.textContent = className;
-    classDropdown.classList.remove('active');
+    // Click outside to close (while menu open)
+    document.addEventListener('click', (e) => {
+      if (!viewMenu || viewMenu.style.display !== 'flex') return;
+      if (!viewMenu.contains(e.target) && !menuButton.contains(e.target)) {
+        closeMenu();
+      }
+    });
 
-    if (className === 'B.Com Sem 5') {
-        foundState.style.display = 'flex';
-        emptyState.style.display = 'none';
-    } else {
-        foundState.style.display = 'none';
-        emptyState.style.display = 'block';
+    // --- Menu search input logic ---
+    const searchInput = document.getElementById('mainSearchInput');
+    const searchBox = document.getElementById('searchBoxContainer');
+    const actionBtn = document.getElementById('actionBtn');
+    const overlayContainer = document.getElementById('result-overlay-container');
+
+    if (searchInput) {
+      searchInput.addEventListener('focus', () => {
+        if (searchBox) searchBox.classList.add('active');
+      });
+
+      searchInput.addEventListener('blur', () => {
+        if (searchInput.value.length === 0 && searchBox) {
+          searchBox.classList.remove('active');
+        }
+      });
+
+      searchInput.addEventListener('input', (e) => {
+        // strictly numeric input (roll numbers)
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        e.target.value = val;
+
+        if (val.length > 0) {
+          actionBtn.classList.add('visible');
+        } else {
+          actionBtn.classList.remove('visible');
+        }
+      });
+
+      // action button triggers search mode (overlay)
+      actionBtn.addEventListener('click', () => {
+        activateSearchMode();
+      });
     }
-}
 
-document.addEventListener('click', function(event) {
-    if (!classDropdown.contains(event.target) && !event.target.closest('.class-pill')) {
-        classDropdown.classList.remove('active');
-    }
-});
+    // Activate & exit search mode (exposed globally as in original inline script)
+    window.activateSearchMode = function() {
+      // Blur menu content visually (menu CSS may add .content-blurred; use menu's scroll container)
+      const menuScroll = document.getElementById('menuScrollContent') || document.querySelector('#view-menu .container-scroll');
+      if (menuScroll) menuScroll.classList.add('content-blurred');
+
+      // Show results overlay
+      if (overlayContainer) {
+        overlayContainer.style.display = 'flex';
+      }
+
+      // Dismiss keyboard
+      if (searchInput) searchInput.blur();
+    };
+
+    window.exitSearchMode = function() {
+      const menuScroll = document.getElementById('menuScrollContent') || document.querySelector('#view-menu .container-scroll');
+      if (menuScroll) menuScroll.classList.remove('content-blurred');
+
+      if (overlayContainer) overlayContainer.style.display = 'none';
+
+      if (searchInput) searchInput.value = '';
+      if (actionBtn) actionBtn.classList.remove('visible');
+      if (searchBox) searchBox.classList.remove('active');
+    };
+
+    // Dropdown logic inside overlay
+    window.toggleDropdown = function () {
+      const dd = document.getElementById('classDropdown');
+      if (dd) dd.classList.toggle('active');
+    };
+
+    window.selectClass = function (className) {
+      const sel = document.getElementById('selectedClassText');
+      if (sel) sel.textContent = className;
+
+      const dd = document.getElementById('classDropdown');
+      if (dd) dd.classList.remove('active');
+
+      const foundState = document.getElementById('foundState');
+      const emptyState = document.getElementById('emptyState');
+
+      if (className === 'B.Com Sem 5') {
+        if (foundState) foundState.style.display = 'flex';
+        if (emptyState) emptyState.style.display = 'none';
+      } else {
+        if (foundState) foundState.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
+      }
+    };
+
+    // click outside to close dropdown
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('classDropdown');
+      if (dropdown && !dropdown.contains(event.target) && !event.target.closest('.class-pill')) {
+        dropdown.classList.remove('active');
+      }
+    });
+
+})();
