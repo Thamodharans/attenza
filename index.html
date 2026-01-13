@@ -73,8 +73,8 @@
 <div class="header" id="header">  
     <div class="top-bar">  
         <div class="left-section">  
-            <button class="icon-btn" aria-label="Menu">  
-                <div class="menu-mini"><span></span></div>  
+            <button id="openMenuBtn" class="icon-btn" aria-label="Menu">
+                <div class="menu-mini"><span></span></div>
             </button>  <div class="brand-container">  
             <span class="brand-name">ATTENZA</span>  
             <span class="tagline">a student driven attendance tracker</span>  
@@ -638,7 +638,170 @@ Once you connect Gemini and your attendance backend, this will show real, detail
   </div>
 </div>
 
-</div>  
+</div> 
+
+<!-- MENU CONTAINER -->
+<section id="menuView" class="menu-view hidden" aria-hidden="true">
+
+<div id="view-menu" class="app-view">
+    <div class="container-top">
+        <div class="header-row">
+            <h1 class="header-title">Menu</h1>
+            <button id="closeMenuBtn" class="nav-btn" aria-label="Close Menu">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+        </div>
+
+        <div class="search-box" id="searchBoxContainer">
+            <span class="material-symbols-rounded search-icon">search</span>
+            <span class="search-prefix" id="searchPrefix">Roll –</span>
+            
+            <input type="tel" id="mainSearchInput" placeholder="Search any roll to check attendance" class="search-input" autocomplete="off">
+            
+            <div class="search-action-btn" id="actionBtn" onclick="activateSearchMode()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-scroll" id="scrollContent">
+        <div class="menu-profile-card">
+            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="menu-profile-img" alt="Profile">
+            <div class="menu-profile-info">
+                <h2 class="menu-profile-name">Johnathan Doe</h2>
+                <p class="menu-profile-email">john.doe23@university.edu</p>
+                
+                <div class="profile-pills">
+                    <span class="pill pill-purple">Roll - 234</span>
+                    <span class="pill pill-purple">B.Com 1st Sem</span>
+                </div>
+
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="edit-icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" /><path d="M13.5 6.5l4 4" /><path d="M16 21l5 -5" /><path d="M21 21v.01" /><path d="M16 16v.01" /></svg> 
+            </div>
+        </div>
+
+        <div class="menu-card" style="margin-bottom: 20px; padding-bottom: 15px;">
+            <div class="menu-header">
+                <span class="menu-header-text">Dispur College</span>
+                <span class="material-symbols-rounded" style="color: #d1d5db; font-size: 18px;">school</span>
+            </div>
+
+            <div class="menu-item active" style="padding: 14px 16px;" onclick="window.location.href='setup.html'">
+                <div class="status-dot"></div>
+                <div class="menu-icon-box purple-bg">
+                    <span class="material-symbols-rounded" style="font-size: 18px;">library_add</span>
+                </div>
+                <div class="menu-text">
+                    <p class="menu-title">Select Subjects</p>
+                    <p class="menu-subtitle">Set up subjects to track attendance</p>
+                </div>
+                <span class="material-symbols-rounded chevron-active">chevron_right</span>
+            </div>
+        </div>
+
+        <div class="menu-card">
+            <a href="#" class="menu-item">
+                <span class="material-symbols-rounded menu-icon-gray">badge</span>
+                <span class="menu-item-text">Important Staff</span>
+                <span class="material-symbols-rounded chevron">chevron_right</span>
+            </a>
+            <div class="divider"></div>
+            <a href="#" class="menu-item">
+                <span class="material-symbols-rounded menu-icon-gray">group_add</span>
+                <span class="menu-item-text">Refer a Friend</span>
+                <span class="material-symbols-rounded chevron">chevron_right</span>
+            </a>
+            <div class="divider"></div>
+            <a href="#" class="menu-item">
+                <span class="material-symbols-rounded menu-icon-gray">chat_bubble</span>
+                <span class="menu-item-text">Report Issue</span>
+                <span class="material-symbols-rounded chevron">chevron_right</span>
+            </a>
+            <div class="divider"></div>
+            <a href="#" class="menu-item">
+                <span class="material-symbols-rounded menu-icon-gray">gpp_maybe</span>
+                <span class="menu-item-text">Terms & Privacy</span>
+                <span class="material-symbols-rounded chevron">chevron_right</span>
+            </a>
+        </div>
+
+        <div class="logout-section">
+            <button class="btn-logout">
+                <span class="material-symbols-rounded">logout</span>
+                Log Out
+            </button>
+            <div class="version-text">Attenza Educational • v1.0.4</div>
+        </div>
+    </div>
+</div>
+
+<div id="result-overlay-container">
+    <div class="overlay-backdrop" onclick="exitSearchMode()"></div>
+
+    <div class="result-wrapper">
+        <div class="result-header">
+            <span class="helper-text">Showing students from</span>
+            
+            <div class="dropdown-wrapper" id="classDropdown">
+                <div class="class-pill" onclick="toggleDropdown()">
+                    <span id="selectedClassText">B.Com Sem 5</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+
+                <div class="dropdown-list">
+                    <div class="dropdown-item" onclick="selectClass('B.Com Sem 5')">B.Com Sem 5</div>
+                    <div class="dropdown-item" onclick="selectClass('B.Com Sem 3')">B.Com Sem 3</div>
+                    <div class="dropdown-item" onclick="selectClass('B.A. Sem 1')">B.A. Sem 1</div>
+                    <div class="dropdown-item" onclick="selectClass('H.S. 2nd Year')">H.S. 2nd Year</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-card" id="foundState">
+            <div class="card-left">
+                <div class="avatar-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+                <div class="info-group">
+                    <div class="student-name">Rahul Sharma</div>
+                    <div class="data-freshness">
+                        <span class="status-dot-result"></span>
+                        Updated 2h ago
+                    </div>
+                </div>
+            </div>
+            <div class="card-right">
+                <span class="percentage-val">78%</span>
+                <span class="percentage-label">Overall</span>
+            </div>
+        </div>
+
+        <div class="empty-card" id="emptyState">
+            <div class="empty-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </div>
+            <div class="empty-title">No student found</div>
+            <div class="empty-desc">Your classmates in this section are not using Attendmark yet.</div>
+            
+            <button class="invite-pill">
+                Invite Friend
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+    
+</section>
+
 
 <!-- flatpickr (kept as external CDN) -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
