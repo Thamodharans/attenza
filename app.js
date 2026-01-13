@@ -844,3 +844,128 @@ document.addEventListener("keydown", (e) => {
 
 initSelectors();
 renderMonth();
+
+// ===== MENU OPEN / CLOSE =====
+
+// find things on the page
+const menuView = document.getElementById('menuView');
+const openMenuBtn = document.getElementById('openMenuBtn');
+const closeMenuBtn = document.getElementById('closeMenuBtn');
+
+// open menu
+if (openMenuBtn) {
+  openMenuBtn.addEventListener('click', function () {
+    menuView.classList.remove('hidden', 'hide');
+    menuView.classList.add('show');
+    document.body.classList.add('no-scroll');
+  });
+}
+
+// close menu
+if (closeMenuBtn) {
+  closeMenuBtn.addEventListener('click', function () {
+    menuView.classList.remove('show');
+    menuView.classList.add('hide');
+    document.body.classList.remove('no-scroll');
+
+    setTimeout(function () {
+      menuView.classList.add('hidden');
+    }, 260);
+  });
+}
+
+// ===== SEARCH + OVERLAY + DROPDOWN LOGIC =====
+
+// elements used by the search/menu overlay
+const searchInput = document.getElementById('mainSearchInput');
+const searchBox = document.getElementById('searchBoxContainer');
+const actionBtn = document.getElementById('actionBtn');
+const scrollContent = document.getElementById('scrollContent'); // the content that will blur
+const overlayContainer = document.getElementById('result-overlay-container');
+
+// --- search input behavior ---
+if (searchInput) {
+  searchInput.addEventListener('focus', () => {
+    searchBox.classList.add('active');
+  });
+
+  searchInput.addEventListener('blur', () => {
+    if (searchInput.value.length === 0) {
+      searchBox.classList.remove('active');
+    }
+  });
+
+  searchInput.addEventListener('input', (e) => {
+    // keep only numbers
+    const val = e.target.value.replace(/[^0-9]/g, '');
+    e.target.value = val;
+
+    if (val.length > 0) {
+      actionBtn?.classList.add('visible');
+    } else {
+      actionBtn?.classList.remove('visible');
+    }
+  });
+}
+
+// --- show overlay (when user taps the right arrow) ---
+function activateSearchMode() {
+  // blur the scroll area
+  scrollContent?.classList.add('content-blurred');
+
+  // show overlay container
+  if (overlayContainer) {
+    overlayContainer.style.display = 'flex';
+  }
+
+  // close mobile keyboard if open
+  searchInput?.blur();
+}
+
+// --- hide overlay and reset search ---
+function exitSearchMode() {
+  scrollContent?.classList.remove('content-blurred');
+
+  if (overlayContainer) {
+    overlayContainer.style.display = 'none';
+  }
+
+  if (searchInput) {
+    searchInput.value = '';
+  }
+  actionBtn?.classList.remove('visible');
+  searchBox?.classList.remove('active');
+}
+
+// --- dropdown (class selector) ---
+function toggleDropdown() {
+  const dd = document.getElementById('classDropdown');
+  dd?.classList.toggle('active');
+}
+
+function selectClass(className) {
+  const selectedText = document.getElementById('selectedClassText');
+  const foundState = document.getElementById('foundState');
+  const emptyState = document.getElementById('emptyState');
+
+  if (selectedText) selectedText.textContent = className;
+  document.getElementById('classDropdown')?.classList.remove('active');
+
+  // fake logic: show found for B.Com Sem 5 else show empty
+  if (className === 'B.Com Sem 5') {
+    if (foundState) foundState.style.display = 'flex';
+    if (emptyState) emptyState.style.display = 'none';
+  } else {
+    if (foundState) foundState.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'block';
+  }
+}
+
+// click outside to close dropdown
+document.addEventListener('click', function (event) {
+  const dropdown = document.getElementById('classDropdown');
+  if (dropdown && !dropdown.contains(event.target) && !event.target.closest('.class-pill')) {
+    dropdown.classList.remove('active');
+  }
+});
+
