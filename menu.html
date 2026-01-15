@@ -550,14 +550,9 @@
         profileClassEl.textContent = classText;
         menuCollegeLabel.textContent = profile.college || "College";
         // profile picture - if user has e.g. photoURL in profile use it. Otherwise keep default.
-        if (profile.photoURL) {
-          profileImageEl.src = profile.photoURL;
-        } else if (currentUser && currentUser.photoURL) {
-          profileImageEl.src = currentUser.photoURL;
-        } else {
           // keep existing src; try default
-          profileImageEl.src = getDefaultDp();
-        }
+        profileImageEl.src = getDefaultDp();
+      }
 
         // If user has selected subjects (either in a field or a subcollection indicator), change subject card copy.
         // We'll check a few plausible places:
