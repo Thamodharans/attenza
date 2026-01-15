@@ -259,7 +259,6 @@
         <div class="container-top">
             <div class="header-row">
                 <h1 class="header-title">Menu</h1>
-                <!-- CLOSE: call closeMenu() which posts message to parent -->
                 <button class="nav-btn" onclick="closeMenu()" aria-label="Close Menu">
                     <span class="material-symbols-rounded">close</span>
                 </button>
@@ -282,14 +281,14 @@
 
         <div class="container-scroll" id="scrollContent">
             <div class="menu-profile-card">
-                <img id="profileImage" src="../Image/avatar.jpg" class="menu-profile-img" alt="Profile">
+                <img id="profileImage" src="/Image/avatar.jpg" class="menu-profile-img" alt="Profile">
                 <div class="menu-profile-info">
-                    <h2 class="menu-profile-name" id="profileName">Johnathan Doe</h2>
-                    <p class="menu-profile-email" id="profileEmail">john.doe23@university.edu</p>
+                    <h2 class="menu-profile-name" id="profileName">Student</h2>
+                    <p class="menu-profile-email" id="profileEmail">Loading...</p>
                     
                     <div class="profile-pills">
-                        <span class="pill pill-purple" id="profileRoll">Roll - 234</span>
-                        <span class="pill pill-purple" id="profileClass">B.Com 1st Sem</span>
+                        <span class="pill pill-purple" id="profileRoll">Roll - —</span>
+                        <span class="pill pill-purple" id="profileClass">Class - —</span>
                     </div>
 
                     <svg id="profileEditBtn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="edit-icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" /><path d="M13.5 6.5l4 4" /><path d="M16 21l5 -5" /><path d="M21 21v.01" /><path d="M16 16v.01" /></svg> 
@@ -298,7 +297,7 @@
 
             <div class="menu-card" style="margin-bottom: 20px; padding-bottom: 15px;">
                 <div class="menu-header">
-                    <span class="menu-header-text" id="menuCollegeLabel">Dispur College</span>
+                    <span class="menu-header-text" id="menuCollegeLabel">College</span>
                     <span class="material-symbols-rounded" style="color: #d1d5db; font-size: 18px;">school</span>
                 </div>
 
@@ -360,7 +359,7 @@
                 
                 <div class="dropdown-wrapper" id="classDropdown">
                     <div class="class-pill" onclick="toggleDropdown()">
-                        <span id="selectedClassText">B.Com Sem 5</span>
+                        <span id="selectedClassText">Select Class</span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </div>
 
@@ -379,7 +378,7 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                     </div>
                     <div class="info-group">
-                        <div class="student-name" id="resultName">Rahul Sharma</div>
+                        <div class="student-name" id="resultName">Student</div>
                         <div class="data-freshness" id="resultFreshness">
                             <span class="status-dot-result"></span>
                             Updated just now
@@ -387,7 +386,7 @@
                     </div>
                 </div>
                 <div class="card-right">
-                    <span class="percentage-val" id="resultPercent">78%</span>
+                    <span class="percentage-val" id="resultPercent">--%</span>
                     <span class="percentage-label">Overall</span>
                 </div>
             </div>
@@ -413,7 +412,6 @@
         </div>
     </div>
 
-    <!-- Firebase + Menu logic -->
     <script type="module">
       // Firebase v10 imports (same config as other files)
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -525,8 +523,8 @@
 
       // Set friendly placeholders when no profile available
       function setProfilePlaceholders(pre = {}) {
-        profileNameEl.textContent = pre.name || "Guest User";
-        profileEmailEl.textContent = pre.email || "Not signed in";
+        profileNameEl.textContent = pre.name || "Student";
+        profileEmailEl.textContent = pre.email || "—";
         profileRollEl.textContent = "Roll - —";
         profileClassEl.textContent = "Class - —";
         profileImageEl.src = getDefaultDp();
@@ -536,26 +534,27 @@
       }
 
       function getDefaultDp() {
-        // Use local asset if present; fallback to neutral avatar
-        return "../Image/avatar.jpg"; // if not present, browser will try; UI already uses an unsplash fallback
+        // STRICTLY use the local asset with root slash (for iframe compatibility)
+        return "/Image/avatar.jpg"; 
       }
 
       function applyProfileToUI(profile, fromCache=false) {
         if (!profile) return;
-        // fields we expect: name, email, rollNumber, college, course_or_class, section
+        
+        // --- TEXT FIELDS WITH FALLBACKS ---
         profileNameEl.textContent = profile.name || (currentUser && currentUser.displayName) || "Student";
-        profileEmailEl.textContent = profile.email || (currentUser && currentUser.email) || "";
+        profileEmailEl.textContent = profile.email || (currentUser && currentUser.email) || "—";
         profileRollEl.textContent = profile.rollNumber ? `Roll - ${profile.rollNumber}` : "Roll - —";
         const classText = profile.course_or_class ? `${profile.course_or_class}${profile.section ? ' · ' + profile.section : ''}` : "Class - —";
         profileClassEl.textContent = classText;
         menuCollegeLabel.textContent = profile.college || "College";
-        // profile picture - if user has e.g. photoURL in profile use it. Otherwise keep default.
-          // keep existing src; try default
+        
+        // --- STRICT IMAGE LOGIC ---
+        // Completely ignores Google photoURL or Database photoURL.
+        // Always uses the local default image.
         profileImageEl.src = getDefaultDp();
-      }
 
         // If user has selected subjects (either in a field or a subcollection indicator), change subject card copy.
-        // We'll check a few plausible places:
         let subjectsExist = false;
         if (Array.isArray(profile.selectedSubjects) && profile.selectedSubjects.length > 0) subjectsExist = true;
         if (profile.subjectCount && Number(profile.subjectCount) > 0) subjectsExist = true;
