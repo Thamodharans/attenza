@@ -69,7 +69,7 @@ async function loadSummary() {
 
     const total = pastTotal + trackTotal;
     const present = pastPresent + trackPresent;
-    const percentage = 100; // Overriding as per request
+    const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
 
     updateRingUI(percentage);
     updateQuote(percentage);
@@ -586,7 +586,7 @@ async function updateMajorCard(majors, overrideStats = null) {
     });
   }
 
-  const percent = 100; // Overriding as per request to show 100%
+  const percent = totalM > 0 ? Math.round((presentM / totalM) * 100) : 0;
 
   if (percentEl) percentEl.innerText = `${percent}%`;
   if (footerEl) footerEl.innerText = `${majors.length} major subjects`;
